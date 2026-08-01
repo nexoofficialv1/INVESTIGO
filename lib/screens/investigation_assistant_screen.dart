@@ -86,6 +86,12 @@ class _InvestigationAssistantScreenState
 
   void _analyse() {
     final result = _parser.analyse(_narration.text);
+    if (_place.text.trim().isEmpty && result.context.places.isNotEmpty) {
+      _place.text = result.context.places.first;
+    }
+    if (_arrivalTime.text.trim().isEmpty && result.context.times.isNotEmpty) {
+      _arrivalTime.text = result.context.times.first;
+    }
     setState(() {
       _result = result;
       _selected
@@ -196,15 +202,25 @@ class _InvestigationAssistantScreenState
       for (final index in _selected.toList()..sort()) {
         final suggestion = result.suggestions[index];
         var details = _editedParagraphs[index] ?? suggestion.paragraph;
+        if (suggestion.detectedPersons.isNotEmpty &&
+            !details.contains('Detected witness')) {
+          details = '$details\nDetected witness(es): ${suggestion.detectedPersons.join(', ')}';
+        }
+        final actionTime = suggestion.detectedTime.isNotEmpty
+            ? suggestion.detectedTime
+            : _arrivalTime.text.trim();
+        final actionPlace = suggestion.detectedPlace.isNotEmpty
+            ? suggestion.detectedPlace
+            : _place.text.trim();
         var action = InvestigationActionEntry.create(
           caseId: widget.caseFile.id,
           actionDate: _date.text.trim(),
           actionType: suggestion.actionType,
           outsidePs: suggestion.outsidePs,
           departureTime: _departureTime.text.trim(),
-          actionArrivalTime: _arrivalTime.text.trim(),
+          actionArrivalTime: actionTime,
           returnTime: _returnTime.text.trim(),
-          place: _place.text.trim(),
+          place: actionPlace,
           accompaniedBy: '',
           sopResponse: '',
           details: details,
@@ -232,9 +248,9 @@ class _InvestigationAssistantScreenState
             actionType: suggestion.actionType,
             outsidePs: suggestion.outsidePs,
             departureTime: _departureTime.text.trim(),
-            actionArrivalTime: _arrivalTime.text.trim(),
+            actionArrivalTime: actionTime,
             returnTime: _returnTime.text.trim(),
-            place: _place.text.trim(),
+            place: actionPlace,
             accompaniedBy: '',
             sopResponse: '',
             details: details,
@@ -255,11 +271,6 @@ class _InvestigationAssistantScreenState
             sourceId: action.id,
             title: suggestion.synopsis,
             actionDate: action.actionDate,
-            entryTime: _arrivalTime.text.trim().isNotEmpty
-                ? _arrivalTime.text.trim()
-                : _departureTime.text.trim(),
-            placeOfEntry: _place.text.trim(),
-            synopsis: suggestion.synopsis,
             paragraph: details,
           ),
         );

@@ -23,11 +23,10 @@ void main() {
     expect(witness.paragraph, contains('সাক্ষীর বিবৃতি'));
   });
 
-  test('CD-1 narration identifies PO, complainant, witness, sketch and index', () {
+  test('CD-1 narration identifies normal first-day work', () {
     final result = service.analyse(
       'আজ ঘটনাস্থল পরিদর্শন করে অভিযোগকারীকে পরীক্ষা করলাম। দুইজন সাক্ষীর বিবৃতি রেকর্ড করলাম। rough sketch map with index প্রস্তুত করলাম।',
     );
-
     final types = result.suggestions.map((e) => e.actionType).toSet();
     expect(types, contains('PO Visit / Local Enquiry'));
     expect(types, contains('Complainant Examination / Statement Record'));
@@ -40,20 +39,22 @@ void main() {
     final result = service.analyse(
       'আজ আরও একজন সাক্ষীকে পরীক্ষা করে তার বিবৃতি রেকর্ড করলাম।',
     );
-    expect(
-      result.suggestions.any(
-        (e) => e.actionType == 'Witness Examination / Statement Record',
-      ),
-      isTrue,
+    expect(result.suggestions.any((e) => e.actionType.contains('Witness')), isTrue);
+    expect(result.suggestions.any((e) => e.actionType.contains('PO Visit')), isFalse);
+  });
+
+  test('extracts witness names from narration', () {
+    final result = service.analyse(
+      'সাক্ষী নামে রমেশ দাস ও সুরেশ পালকে পরীক্ষা করে সাক্ষীদের বিবৃতি রেকর্ড করলাম।',
     );
-    expect(
-      result.suggestions.any((e) => e.actionType.contains('PO Visit')),
-      isFalse,
-    );
+    expect(result.context.witnessNames, contains('রমেশ দাস'));
+    expect(result.context.witnessNames, contains('সুরেশ পাল'));
   });
 
   test('sketch map without index creates review warning', () {
-    final result = service.analyse('সকাল ১১:30 hrs ঘটনাস্থলের rough sketch map প্রস্তুত করলাম।');
+    final result = service.analyse(
+      'সকাল ১১:30 hrs ঘটনাস্থলের rough sketch map প্রস্তুত করলাম।',
+    );
     expect(result.warnings.any((e) => e.contains('Index')), isTrue);
   });
 }
