@@ -223,84 +223,195 @@ class PdfService {
     );
   }
 
-  pw.Widget _wbOfficialCdContinuousTable(CdEntry cd, OfficerProfile officer, {bool showSignature = true}) {
+  pw.Widget _wbOfficialCdContinuousTable(
+    CdEntry cd,
+    OfficerProfile officer, {
+    bool showSignature = true,
+  }) {
     final lines = cd.tableLines.isNotEmpty
         ? cd.tableLines
-        : [CdTableLine(noAndHour: 'I\n${cd.startTime}', placeOfEntry: cd.placeOfEntry, synopsis: cd.cdNumber == 1 ? _t('FIR-এর কপি প্রাপ্ত\n+\nসারমর্ম', 'Received copy of FIR\n+\nGist') : _t('পরবর্তী তদন্ত', 'Further investigation'), proceedings: cd.body)];
+        : [
+            CdTableLine(
+              noAndHour: 'I\n${cd.startTime}',
+              placeOfEntry: cd.placeOfEntry,
+              synopsis: cd.cdNumber == 1
+                  ? _t(
+                      'FIR-এর কপি প্রাপ্ত\n+\nসারমর্ম',
+                      'Received copy of FIR\n+\nGist',
+                    )
+                  : _t('পরবর্তী তদন্ত', 'Further investigation'),
+              proceedings: cd.body,
+            ),
+          ];
 
-    final leftEntryColumn = lines.map((line) => line.noAndHour).join('\n\n\n');
-    final placeColumn = lines.map((line) => line.placeOfEntry).join('\n\n\n');
-    final synopsisColumn = lines.map((line) => line.synopsis).join('\n\n\n');
-    final proceedingsColumn = lines.map((line) => line.proceedings).where((e) => e.trim().isNotEmpty).join('\n\n');
-
-    // Official PRB Form No. 43 layout:
-    // Row 1: "Particulars of Enquiry." is merged only over the three marginal columns.
-    // Row 2: three marginal columns + the large proceedings column.
-    // No horizontal line is inserted between individual CD entries.
-    return pw.Table(
-      border: pw.TableBorder.all(width: 0.55),
-      columnWidths: const {
-        0: pw.FlexColumnWidth(2.90),
-        1: pw.FlexColumnWidth(7.10),
-      },
-      children: [
-        pw.TableRow(children: [
-          pw.Container(
-            padding: const pw.EdgeInsets.fromLTRB(8, 3, 8, 3),
-            child: pw.Text(_t('তদন্তের বিবরণ।', 'Particulars of Enquiry.'), style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold)),
+    pw.Widget marginalCells(CdTableLine line, {bool header = false}) {
+      return pw.Table(
+        border: const pw.TableBorder(
+          verticalInside: pw.BorderSide(width: 0.55),
+        ),
+        columnWidths: const {
+          0: pw.FlexColumnWidth(0.86),
+          1: pw.FlexColumnWidth(0.90),
+          2: pw.FlexColumnWidth(1.14),
+        },
+        children: [
+          pw.TableRow(
+            verticalAlignment: pw.TableCellVerticalAlignment.top,
+            children: [
+              _officialCell(
+                line.noAndHour,
+                center: true,
+                fontSize: header ? 9.4 : 9.2,
+                minHeight: header ? 46 : null,
+              ),
+              _officialCell(
+                line.placeOfEntry,
+                center: true,
+                fontSize: header ? 9.4 : 9.2,
+                minHeight: header ? 46 : null,
+              ),
+              _officialCell(
+                line.synopsis,
+                center: true,
+                fontSize: header ? 9.4 : 9.2,
+                minHeight: header ? 46 : null,
+              ),
+            ],
           ),
-          pw.SizedBox(height: 22),
-        ]),
+        ],
+      );
+    }
+
+    final rows = <pw.TableRow>[
+      pw.TableRow(
+        children: [
+          pw.Container(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(width: 0.55),
+              ),
+            ),
+            padding: const pw.EdgeInsets.fromLTRB(8, 3, 8, 3),
+            child: pw.Text(
+              _t('তদন্তের বিবরণ।', 'Particulars of Enquiry.'),
+              style: pw.TextStyle(
+                fontSize: 11.5,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ),
+          pw.Container(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(width: 0.55),
+              ),
+            ),
+            height: 23,
+          ),
+        ],
+      ),
+      pw.TableRow(
+        verticalAlignment: pw.TableCellVerticalAlignment.top,
+        children: [
+          pw.Container(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(width: 0.55),
+              ),
+            ),
+            child: marginalCells(
+              CdTableLine(
+                noAndHour: _t(
+                  'এন্ট্রি নং\nও সময়।',
+                  'No. and\nhour of\nentry.',
+                ),
+                placeOfEntry: _t('এন্ট্রির\nস্থান।', 'Place of\nentry.'),
+                synopsis: _t(
+                  'এন্ট্রির\nসারাংশ।',
+                  'Synopsis of\nentry.',
+                ),
+                proceedings: '',
+              ),
+              header: true,
+            ),
+          ),
+          pw.Container(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(width: 0.55),
+              ),
+            ),
+            height: 46,
+          ),
+        ],
+      ),
+    ];
+
+    for (final line in lines) {
+      final estimatedHeight = math
+          .max(
+            42.0,
+            18.0 + (line.proceedings.length / 72.0).ceil() * 12.0,
+          )
+          .toDouble();
+      rows.add(
         pw.TableRow(
           verticalAlignment: pw.TableCellVerticalAlignment.top,
           children: [
-            pw.Table(
-              border: const pw.TableBorder(
-                verticalInside: pw.BorderSide(width: 0.55),
-                horizontalInside: pw.BorderSide(width: 0.55),
-              ),
-              columnWidths: const {
-                0: pw.FlexColumnWidth(0.86),
-                1: pw.FlexColumnWidth(0.90),
-                2: pw.FlexColumnWidth(1.14),
-              },
-              children: [
-                pw.TableRow(children: [
-                  _officialCell(_t('এন্ট্রি নং\nও সময়।', 'No. and\nhour of\nentry.'), center: true, fontSize: 9.4),
-                  _officialCell(_t('এন্ট্রির\nস্থান।', 'Place of\nentry.'), center: true, fontSize: 9.4),
-                  _officialCell(_t('এন্ট্রির\nসারাংশ।', 'Synopsis of\nentry.'), center: true, fontSize: 9.4),
-                ]),
-                pw.TableRow(
-                  verticalAlignment: pw.TableCellVerticalAlignment.top,
-                  children: [
-                    _officialCell(leftEntryColumn, center: true, fontSize: 9.4, minHeight: 520),
-                    _officialCell(placeColumn, center: true, fontSize: 9.4, minHeight: 520),
-                    _officialCell(synopsisColumn, center: true, fontSize: 9.4, minHeight: 520),
-                  ],
-                ),
-              ],
+            pw.Container(
+              constraints: pw.BoxConstraints(minHeight: estimatedHeight),
+              child: marginalCells(line),
             ),
             pw.Container(
-              constraints: const pw.BoxConstraints(minHeight: 575),
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.fromLTRB(6, 4, 6, 4),
+              constraints: pw.BoxConstraints(minHeight: estimatedHeight),
+              padding: const pw.EdgeInsets.fromLTRB(6, 4, 6, 6),
+              child: pw.Text(
+                line.proceedings,
+                style: const pw.TextStyle(fontSize: 10.2),
+                textAlign: pw.TextAlign.justify,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (showSignature) {
+      rows.add(
+        pw.TableRow(
+          verticalAlignment: pw.TableCellVerticalAlignment.top,
+          children: [
+            marginalCells(
+              const CdTableLine(
+                noAndHour: '',
+                placeOfEntry: '',
+                synopsis: '',
+                proceedings: '',
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.fromLTRB(6, 14, 34, 8),
+              child: pw.Align(
+                alignment: pw.Alignment.centerRight,
                 child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text(proceedingsColumn, style: const pw.TextStyle(fontSize: 10.2), textAlign: pw.TextAlign.justify),
-                    if (showSignature) pw.SizedBox(height: 18),
-                    if (showSignature) pw.Align(
-                      alignment: pw.Alignment.centerRight,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.center,
-                        children: [
-                          pw.Text(_t('পেশ করা হলো', 'Submitted'), style: const pw.TextStyle(fontSize: 10.5)),
-                          pw.SizedBox(height: 28),
-                          pw.Text('(${officer.name})', style: const pw.TextStyle(fontSize: 10.5)),
-                          pw.Text(officer.rank, style: const pw.TextStyle(fontSize: 10.5)),
-                          pw.Text(_shortPsName(officer.policeStation), style: const pw.TextStyle(fontSize: 10.5)),
-                        ],
-                      ),
+                    pw.Text(
+                      _t('পেশ করা হলো', 'Submitted'),
+                      style: const pw.TextStyle(fontSize: 10.5),
+                    ),
+                    pw.SizedBox(height: 28),
+                    pw.Text(
+                      '(${officer.name})',
+                      style: const pw.TextStyle(fontSize: 10.5),
+                    ),
+                    pw.Text(
+                      officer.rank,
+                      style: const pw.TextStyle(fontSize: 10.5),
+                    ),
+                    pw.Text(
+                      _shortPsName(officer.policeStation),
+                      style: const pw.TextStyle(fontSize: 10.5),
                     ),
                   ],
                 ),
@@ -308,7 +419,22 @@ class PdfService {
             ),
           ],
         ),
-      ],
+      );
+    }
+
+    return pw.Table(
+      border: const pw.TableBorder(
+        left: pw.BorderSide(width: 0.55),
+        right: pw.BorderSide(width: 0.55),
+        top: pw.BorderSide(width: 0.55),
+        bottom: pw.BorderSide(width: 0.55),
+        verticalInside: pw.BorderSide(width: 0.55),
+      ),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(2.90),
+        1: pw.FlexColumnWidth(7.10),
+      },
+      children: rows,
     );
   }
 

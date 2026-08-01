@@ -91,18 +91,26 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
     _answers.verificationDetails = verification.text.trim();
     _answers.digitalEvidenceDetails = digitalEvidence.text.trim();
     _answers.importantDevelopmentDetails = importantDevelopment.text.trim();
-    final selectedPending = pendingActions.where((e) => selectedPendingActionIds.contains(e.id)).toList();
-    _answers.pendingActionParagraphs = selectedPending.map((e) => e.paragraph).toList();
+    final selectedPending = pendingActions
+        .where((e) => selectedPendingActionIds.contains(e.id))
+        .toList();
+    _answers.pendingActionParagraphs = const <String>[];
 
     final service = CdGeneratorService();
     final now = DateTime.now();
     final time = '${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')} hrs.';
-    final tableLines = service.generateOfficialCdTableLines(
+    final generatedLines = service.generateOfficialCdTableLines(
       caseFile: widget.caseFile,
       cdNumber: number,
       time: time,
       defaultPlace: widget.profile.policeStation,
       answers: _answers,
+    );
+    final tableLines = _mergePendingActions(
+      generatedLines: generatedLines,
+      pending: selectedPending,
+      fallbackTime: time,
+      fallbackPlace: widget.profile.policeStation,
     );
     final body = tableLines.map((e) => e.proceedings).join('\n\n');
     final cd = CdEntry.newDraft(
@@ -119,6 +127,65 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
       context,
       MaterialPageRoute(builder: (_) => CdEditorScreen(profile: widget.profile, caseFile: widget.caseFile, cd: cd)),
     );
+  }
+
+
+  List<CdTableLine> _mergePendingActions({
+    required List<CdTableLine> generatedLines,
+    required List<PendingCdAction> pending,
+    required String fallbackTime,
+    required String fallbackPlace,
+  }) {
+    if (pending.isEmpty) return _renumberLines(generatedLines);
+
+    final result = <CdTableLine>[];
+    final closing = generatedLines.isNotEmpty ? generatedLines.last : null;
+    if (closing != null) {
+      result.addAll(generatedLines.sublist(0, generatedLines.length - 1));
+    }
+
+    for (final action in pending) {
+      result.add(
+        CdTableLine(
+          noAndHour: action.entryTime.trim().isEmpty
+              ? fallbackTime
+              : action.entryTime.trim(),
+          placeOfEntry: action.placeOfEntry.trim().isEmpty
+              ? fallbackPlace
+              : action.placeOfEntry.trim(),
+          synopsis: action.synopsis.trim().isEmpty
+              ? action.title.trim()
+              : action.synopsis.trim(),
+          proceedings: action.paragraph.trim(),
+        ),
+      );
+    }
+
+    if (closing != null) result.add(closing);
+    return _renumberLines(result);
+  }
+
+  List<CdTableLine> _renumberLines(List<CdTableLine> lines) {
+    const romans = <String>[
+      'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+      'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX',
+    ];
+    return List<CdTableLine>.generate(lines.length, (index) {
+      final line = lines[index];
+      final raw = line.noAndHour.trim();
+      final time = raw
+          .split(RegExp(r'\s+'))
+          .where((part) => !RegExp(r'^[IVX]+$').hasMatch(part))
+          .join(' ')
+          .trim();
+      final roman = index < romans.length ? romans[index] : '${index + 1}';
+      return CdTableLine(
+        noAndHour: time.isEmpty ? roman : '$roman\n$time',
+        placeOfEntry: line.placeOfEntry,
+        synopsis: line.synopsis,
+        proceedings: line.proceedings,
+      );
+    });
   }
 
   @override

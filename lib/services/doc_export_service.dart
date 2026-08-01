@@ -31,6 +31,8 @@ class DocExportService {
   .bold { font-weight: bold; }
   .small { font-size: 10.5pt; }
   .cd td { font-size: 10.5pt; }
+  .cd .entry-row td { border-top: 0; border-bottom: 0; }
+  .cd .signature-row td { border-top: 0; }
   .no-border td, .no-border th { border: none; }
   .justify { text-align: justify; }
   .page-break { page-break-before: always; }
@@ -47,11 +49,27 @@ class DocExportService {
   }) async {
     final lines = cd.tableLines.isNotEmpty
         ? cd.tableLines
-        : [CdTableLine(noAndHour: 'I\n${cd.startTime}', placeOfEntry: cd.placeOfEntry, synopsis: cd.cdNumber == 1 ? 'Received copy of FIR\n+\nGist' : 'Further investigation', proceedings: cd.body)];
-    final noHour = lines.map((e) => _e(e.noAndHour)).join('<br/><br/><br/>');
-    final places = lines.map((e) => _e(e.placeOfEntry)).join('<br/><br/><br/>');
-    final synopsis = lines.map((e) => _e(e.synopsis)).join('<br/><br/><br/>');
-    final proceedings = lines.map((e) => '<p>${_e(e.proceedings)}</p>').join('');
+        : [
+            CdTableLine(
+              noAndHour: 'I\n${cd.startTime}',
+              placeOfEntry: cd.placeOfEntry,
+              synopsis: cd.cdNumber == 1
+                  ? 'Received copy of FIR\n+\nGist'
+                  : 'Further investigation',
+              proceedings: cd.body,
+            ),
+          ];
+    final entryRows = lines
+        .map(
+          (line) => '''
+<tr class="entry-row">
+  <td class="center" style="width:10%">${_e(line.noAndHour)}</td>
+  <td class="center" style="width:10%">${_e(line.placeOfEntry)}</td>
+  <td class="center" style="width:13%">${_e(line.synopsis)}</td>
+  <td class="justify" style="width:67%">${_e(line.proceedings)}</td>
+</tr>''',
+        )
+        .join();
     final year = DateTime.now().year;
     final ps = officer.policeStation.replaceAll('Police Station', 'PS').trim();
     final html = '''
@@ -59,7 +77,7 @@ class DocExportService {
   <span>West Bengal form No. 5363</span><span style="float:right">OF $year</span>
 </div>
 <div class="center bold">CASE DIARY UNDER SECTION 192 BNSS</div>
-<div class="center bold">(P.R.B FROM NO. 43 – Vide <i>Rule 229</i>)</div>
+<div class="center bold">(P.R.B FROM NO. 43 - Vide <i>Rule 229</i>)</div>
 <table class="no-border small">
 <tr><td class="bold">Police Station: -${_e(ps)}</td><td class="bold right">District: -${_e(officer.district)}</td></tr>
 <tr><td class="bold">First information No: -${_e(caseFile.psCaseNo)}</td><td class="bold">Dated: -${_e(caseFile.caseDate)} &nbsp;&nbsp;&nbsp; Section: -${_e(caseFile.sections)}</td></tr>
@@ -68,14 +86,15 @@ class DocExportService {
 </table>
 <table class="cd">
 <tr><td class="center">Arrested and sent up</td><td class="center">Arrested and released on bail.</td><td class="center" colspan="2">At large.</td></tr>
-<tr><td colspan="4" class="bold">Particulars of Enquiry.</td></tr>
+<tr><td colspan="3" class="bold">Particulars of Enquiry.</td><td></td></tr>
 <tr><td class="center" style="width:10%">No. and<br/>hour of<br/>entry.</td><td class="center" style="width:10%">Place of<br/>entry.</td><td class="center" style="width:13%">Synopsis of<br/>entry.</td><td style="width:67%"></td></tr>
-<tr><td class="center">$noHour</td><td class="center">$places</td><td class="center">$synopsis</td><td class="justify">$proceedings</td></tr>
+$entryRows
+<tr class="signature-row"><td></td><td></td><td></td><td class="right" style="padding-right:70px;padding-top:20px">Submitted<br/><br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(ps)}</td></tr>
 </table>
-<div class="right" style="margin-top:18px;margin-right:70px">Submitted<br/><br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(ps)}</div>
 ''';
     return _docBytes(_page('CD-${cd.cdNumber}', html));
   }
+
 
   Future<Uint8List> buildStatementDoc({
     required OfficerProfile officer,

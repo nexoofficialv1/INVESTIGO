@@ -255,6 +255,11 @@ class _InvestigationAssistantScreenState
             sourceId: action.id,
             title: suggestion.synopsis,
             actionDate: action.actionDate,
+            entryTime: _arrivalTime.text.trim().isNotEmpty
+                ? _arrivalTime.text.trim()
+                : _departureTime.text.trim(),
+            placeOfEntry: _place.text.trim(),
+            synopsis: suggestion.synopsis,
             paragraph: details,
           ),
         );

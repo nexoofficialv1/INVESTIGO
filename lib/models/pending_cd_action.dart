@@ -5,6 +5,9 @@ class PendingCdAction {
   final String sourceId;
   final String title;
   final String actionDate;
+  final String entryTime;
+  final String placeOfEntry;
+  final String synopsis;
   final String paragraph;
   final bool consumed;
   final DateTime createdAt;
@@ -17,6 +20,9 @@ class PendingCdAction {
     required this.sourceId,
     required this.title,
     required this.actionDate,
+    required this.entryTime,
+    required this.placeOfEntry,
+    required this.synopsis,
     required this.paragraph,
     required this.consumed,
     required this.createdAt,
@@ -29,6 +35,9 @@ class PendingCdAction {
     required String sourceId,
     required String title,
     required String actionDate,
+    String entryTime = '',
+    String placeOfEntry = '',
+    String synopsis = '',
     required String paragraph,
   }) {
     final now = DateTime.now();
@@ -39,6 +48,9 @@ class PendingCdAction {
       sourceId: sourceId,
       title: title,
       actionDate: actionDate,
+      entryTime: entryTime,
+      placeOfEntry: placeOfEntry,
+      synopsis: synopsis.isEmpty ? title : synopsis,
       paragraph: paragraph,
       consumed: false,
       createdAt: now,
@@ -46,7 +58,13 @@ class PendingCdAction {
     );
   }
 
-  PendingCdAction copyWith({bool? consumed}) {
+  PendingCdAction copyWith({
+    String? entryTime,
+    String? placeOfEntry,
+    String? synopsis,
+    String? paragraph,
+    bool? consumed,
+  }) {
     return PendingCdAction(
       id: id,
       caseId: caseId,
@@ -54,7 +72,10 @@ class PendingCdAction {
       sourceId: sourceId,
       title: title,
       actionDate: actionDate,
-      paragraph: paragraph,
+      entryTime: entryTime ?? this.entryTime,
+      placeOfEntry: placeOfEntry ?? this.placeOfEntry,
+      synopsis: synopsis ?? this.synopsis,
+      paragraph: paragraph ?? this.paragraph,
       consumed: consumed ?? this.consumed,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
@@ -68,6 +89,9 @@ class PendingCdAction {
         'sourceId': sourceId,
         'title': title,
         'actionDate': actionDate,
+        'entryTime': entryTime,
+        'placeOfEntry': placeOfEntry,
+        'synopsis': synopsis,
         'paragraph': paragraph,
         'consumed': consumed,
         'createdAt': createdAt.toIso8601String(),
@@ -75,13 +99,17 @@ class PendingCdAction {
       };
 
   factory PendingCdAction.fromJson(Map<String, dynamic> json) {
+    final title = json['title'] ?? '';
     return PendingCdAction(
       id: json['id'] ?? 'cd_action_${DateTime.now().microsecondsSinceEpoch}',
       caseId: json['caseId'] ?? '',
       sourceType: json['sourceType'] ?? '',
       sourceId: json['sourceId'] ?? '',
-      title: json['title'] ?? '',
+      title: title,
       actionDate: json['actionDate'] ?? '',
+      entryTime: json['entryTime'] ?? '',
+      placeOfEntry: json['placeOfEntry'] ?? '',
+      synopsis: json['synopsis'] ?? title,
       paragraph: json['paragraph'] ?? '',
       consumed: json['consumed'] ?? false,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
