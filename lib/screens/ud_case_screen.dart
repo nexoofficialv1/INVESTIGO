@@ -168,6 +168,48 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
     await Share.shareXFiles([XFile(path)], text: 'UD Inquest DOC');
   }
 
+  Future<void> _previewDeadBodyChallan() async {
+    _ud = _collect();
+    final bytes = await _pdf.buildUdDeadBodyChallanPdf(
+      officer: widget.profile,
+      ud: _ud,
+    );
+    await Printing.layoutPdf(onLayout: (_) async => bytes);
+  }
+
+  Future<void> _exportDeadBodyChallan() async {
+    _ud = _collect();
+    final bytes = await _pdf.buildUdDeadBodyChallanPdf(
+      officer: widget.profile,
+      ud: _ud,
+    );
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: 'UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.pdf',
+    );
+  }
+
+  Future<void> _previewFinalReport() async {
+    _ud = _collect();
+    final bytes = await _pdf.buildUdFinalReportPdf(
+      officer: widget.profile,
+      ud: _ud,
+    );
+    await Printing.layoutPdf(onLayout: (_) async => bytes);
+  }
+
+  Future<void> _exportFinalReport() async {
+    _ud = _collect();
+    final bytes = await _pdf.buildUdFinalReportPdf(
+      officer: widget.profile,
+      ud: _ud,
+    );
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: 'UD_Final_Report_${_ud.udNo.replaceAll('/', '_')}.pdf',
+    );
+  }
+
   void _loadUd(UdCase ud) {
     setState(() {
       _ud = ud;
@@ -244,15 +286,66 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              ElevatedButton.icon(onPressed: _save, icon: const Icon(Icons.save), label: const Text('Save Draft')),
-              OutlinedButton.icon(onPressed: _previewPdf, icon: const Icon(Icons.visibility), label: const Text('Preview')),
-              ElevatedButton.icon(onPressed: _exportPdf, icon: const Icon(Icons.picture_as_pdf), label: const Text('Export PDF')),
-              ElevatedButton.icon(onPressed: _exportDoc, icon: const Icon(Icons.description), label: const Text('Export DOC')),
-            ],
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'UD Documents / ইউডি নথিপত্র',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _save,
+                        icon: const Icon(Icons.save),
+                        label: const Text('Save Draft'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _previewPdf,
+                        icon: const Icon(Icons.visibility),
+                        label: const Text('সুরতহাল Preview'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _exportPdf,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('সুরতহাল PDF'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _exportDoc,
+                        icon: const Icon(Icons.description),
+                        label: const Text('সুরতহাল DOC'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _previewDeadBodyChallan,
+                        icon: const Icon(Icons.visibility),
+                        label: const Text('ডেডবডি চালান Preview'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _exportDeadBodyChallan,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('ডেডবডি চালান PDF'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _previewFinalReport,
+                        icon: const Icon(Icons.visibility),
+                        label: const Text('Final Report Preview'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _exportFinalReport,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('Final Report PDF'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 80),
         ],

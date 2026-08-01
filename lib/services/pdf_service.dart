@@ -35,32 +35,123 @@ class PdfService {
     required CdEntry cd,
   }) async {
     final doc = pw.Document(theme: await _pdfTheme());
+    final pageChunks = _splitCdIntoPageChunks(cd);
 
-    // STRICT OFFICIAL CD FORMAT - West Bengal Form No. 5363 / P.R.B Form No. 43.
-    // Important: no horizontal lines between individual diary entries. Entry no/time,
-    // place, synopsis and proceedings are placed inside one continuous enquiry block.
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(18, 14, 18, 14),
-        header: (context) => context.pageNumber == 1
-            ? pw.SizedBox()
-            : pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                children: [
-                  _wbOfficialCdHeader(officer: officer, caseFile: caseFile, cd: cd, continued: true),
-                  _wbOfficialCdStatusRow(),
-                ],
+    for (var i = 0; i < pageChunks.length; i++) {
+      final chunk = pageChunks[i];
+      final isLast = i == pageChunks.length - 1;
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.fromLTRB(18, 14, 18, 14),
+          build: (_) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              _wbOfficialCdHeader(
+                officer: officer,
+                caseFile: caseFile,
+                cd: cd,
+                continued: i > 0,
               ),
-        build: (context) => [
-          _wbOfficialCdHeader(officer: officer, caseFile: caseFile, cd: cd),
-          _wbOfficialCdStatusRow(),
-          _wbOfficialCdContinuousTable(cd, officer),
-        ],
-      ),
-    );
+              _wbOfficialCdStatusRow(),
+              pw.Expanded(
+                child: _wbOfficialCdContinuousTable(
+                  chunk,
+                  officer,
+                  showSignature: isLast,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return doc.save();
+  }
+
+  List<CdEntry> _splitCdIntoPageChunks(CdEntry cd) {
+    final sourceLines = cd.tableLines.isNotEmpty
+        ? cd.tableLines
+        : [
+            CdTableLine(
+              noAndHour: 'I\n${cd.startTime}',
+              placeOfEntry: cd.placeOfEntry,
+              synopsis: cd.cdNumber == 1
+                  ? _t('FIR-এর কপি প্রাপ্ত\n+\nসারমর্ম', 'Received copy of FIR\n+\nGist')
+                  : _t('পরবর্তী তদন্ত', 'Further investigation'),
+              proceedings: cd.body,
+            ),
+          ];
+
+    const maxCharsPerPage = 2500;
+    final normalized = <CdTableLine>[];
+    for (final line in sourceLines) {
+      final parts = _splitTextSafely(line.proceedings, maxCharsPerPage);
+      for (var i = 0; i < parts.length; i++) {
+        normalized.add(
+          CdTableLine(
+            noAndHour: i == 0 ? line.noAndHour : '',
+            placeOfEntry: i == 0 ? line.placeOfEntry : '',
+            synopsis: i == 0 ? line.synopsis : _t('ক্রমশ', 'Continued'),
+            proceedings: parts[i],
+          ),
+        );
+      }
+    }
+
+    final pages = <List<CdTableLine>>[];
+    var current = <CdTableLine>[];
+    var used = 0;
+    for (final line in normalized) {
+      final cost = line.proceedings.length + 180;
+      if (current.isNotEmpty && used + cost > maxCharsPerPage) {
+        pages.add(current);
+        current = <CdTableLine>[];
+        used = 0;
+      }
+      current.add(line);
+      used += cost;
+    }
+    if (current.isNotEmpty) pages.add(current);
+    if (pages.isEmpty) pages.add(sourceLines);
+
+    return pages
+        .map(
+          (lines) => CdEntry(
+            id: cd.id,
+            caseId: cd.caseId,
+            cdNumber: cd.cdNumber,
+            cdDate: cd.cdDate,
+            startTime: cd.startTime,
+            endTime: cd.endTime,
+            placeOfEntry: cd.placeOfEntry,
+            body: lines.map((e) => e.proceedings).join('\n\n'),
+            tableLines: lines,
+            isFinal: cd.isFinal,
+            createdAt: cd.createdAt,
+            updatedAt: cd.updatedAt,
+          ),
+        )
+        .toList();
+  }
+
+  List<String> _splitTextSafely(String text, int maxChars) {
+    final clean = text.trim();
+    if (clean.isEmpty) return [''];
+    if (clean.length <= maxChars) return [clean];
+    final result = <String>[];
+    var remaining = clean;
+    while (remaining.length > maxChars) {
+      var cut = remaining.lastIndexOf('\n', maxChars);
+      if (cut < maxChars ~/ 2) cut = remaining.lastIndexOf('. ', maxChars);
+      if (cut < maxChars ~/ 2) cut = remaining.lastIndexOf(' ', maxChars);
+      if (cut < 1) cut = maxChars;
+      result.add(remaining.substring(0, cut).trim());
+      remaining = remaining.substring(cut).trimLeft();
+    }
+    if (remaining.isNotEmpty) result.add(remaining);
+    return result;
   }
 
   String _shortPsName(String ps) => ps.replaceAll('Police Station', 'PS').trim();
@@ -132,7 +223,7 @@ class PdfService {
     );
   }
 
-  pw.Widget _wbOfficialCdContinuousTable(CdEntry cd, OfficerProfile officer) {
+  pw.Widget _wbOfficialCdContinuousTable(CdEntry cd, OfficerProfile officer, {bool showSignature = true}) {
     final lines = cd.tableLines.isNotEmpty
         ? cd.tableLines
         : [CdTableLine(noAndHour: 'I\n${cd.startTime}', placeOfEntry: cd.placeOfEntry, synopsis: cd.cdNumber == 1 ? _t('FIR-এর কপি প্রাপ্ত\n+\nসারমর্ম', 'Received copy of FIR\n+\nGist') : _t('পরবর্তী তদন্ত', 'Further investigation'), proceedings: cd.body)];
@@ -197,8 +288,8 @@ class PdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
                     pw.Text(proceedingsColumn, style: const pw.TextStyle(fontSize: 10.2), textAlign: pw.TextAlign.justify),
-                    pw.SizedBox(height: 18),
-                    pw.Align(
+                    if (showSignature) pw.SizedBox(height: 18),
+                    if (showSignature) pw.Align(
                       alignment: pw.Alignment.centerRight,
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -1193,6 +1284,169 @@ extension UdInquestPdfService on PdfService {
               pw.SizedBox(height: 18),
               pw.Text('Name: ${officer.name}', style: normal()),
               pw.Text('Rank: ${officer.rank}', style: normal()),
+            ]),
+          ),
+        ],
+      ),
+    );
+    return doc.save();
+  }
+}
+
+
+extension UdSupportingReportsPdfService on PdfService {
+  Future<Uint8List> buildUdDeadBodyChallanPdf({
+    required OfficerProfile officer,
+    required UdCase ud,
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    final bn = AppLanguageController.instance.isBengali;
+    String t(String b, String e) => bn ? b : e;
+    pw.TextStyle normal([double size = 11]) => pw.TextStyle(fontSize: size);
+    pw.TextStyle bold([double size = 11]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
+    pw.Widget line(String label, String value, {double height = 22}) => pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 5),
+          child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.Text(label, style: bold()),
+            pw.SizedBox(width: 4),
+            pw.Expanded(
+              child: pw.Container(
+                constraints: pw.BoxConstraints(minHeight: height),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(width: .45)),
+                ),
+                child: pw.Text(value, style: normal()),
+              ),
+            ),
+          ]),
+        );
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(42, 32, 42, 34),
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Center(child: pw.Text(t('পশ্চিমবঙ্গ সরকার', 'GOVERNMENT OF WEST BENGAL'), style: bold(12))),
+            pw.Center(child: pw.Text(t('পুলিশ বিভাগ', 'POLICE DEPARTMENT'), style: bold(12))),
+            pw.SizedBox(height: 8),
+            pw.Center(child: pw.Text(t('মৃতদেহ চালান', 'DEAD BODY CHALLAN'), style: bold(16))),
+            pw.SizedBox(height: 18),
+            line(t('UD মামলা নং:', 'UD Case No.:'), ud.udNo),
+            line(t('থানা:', 'Police Station:'), ud.policeStation),
+            line(t('জেলা:', 'District:'), ud.district),
+            line(t('জিডিই নং ও তারিখ:', 'GDE No. & Date:'), ud.gdeNo),
+            line(t('মৃত ব্যক্তির নাম:', 'Name of deceased:'), ud.deceasedName),
+            line(t('বয়স/লিঙ্গ:', 'Age/Sex:'), '${ud.deceasedAge} / ${ud.deceasedSex}'),
+            line(t('ঠিকানা:', 'Address:'), ud.deceasedAddress, height: 34),
+            line(t('মৃতদেহ উদ্ধারের স্থান:', 'Place where body was found:'), ud.placeFound, height: 34),
+            line(t('উদ্ধারের তারিখ ও সময়:', 'Date & time found:'), '${ud.deadBodyFoundDate} ${ud.deadBodyFoundTime}'),
+            line(t('সনাক্তকারী ব্যক্তির নাম ও ঠিকানা:', 'Identified by:'), '${ud.identifiedByName}, ${ud.identifiedByAddress}', height: 34),
+            line(t('সংক্ষিপ্ত ঘটনা:', 'Brief facts:'), ud.briefFacts, height: 68),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              t(
+                'উপরোক্ত মৃতদেহটি ময়নাতদন্তের জন্য প্রেরণ করা হলো। মৃতদেহের পরিচয়, সিল ও সংশ্লিষ্ট কাগজপত্র পরীক্ষা করে গ্রহণ করার অনুরোধ করা হচ্ছে।',
+                'The above dead body is forwarded for post-mortem examination. Kindly receive the body after verifying identity, seal and accompanying papers.',
+              ),
+              style: normal(),
+              textAlign: pw.TextAlign.justify,
+            ),
+            pw.Spacer(),
+            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text(t('মৃতদেহ বহনকারীর স্বাক্ষর', 'Signature of body carrier'), style: normal()),
+                pw.SizedBox(height: 28),
+                pw.Text('________________________', style: normal()),
+              ]),
+              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+                pw.Text(t('তদন্তকারী অফিসারের স্বাক্ষর', 'Signature of Investigating Officer'), style: normal()),
+                pw.SizedBox(height: 24),
+                pw.Text('${officer.rank} ${officer.name}', style: bold()),
+                pw.Text(officer.policeStation, style: normal()),
+              ]),
+            ]),
+          ],
+        ),
+      ),
+    );
+    return doc.save();
+  }
+
+  Future<Uint8List> buildUdFinalReportPdf({
+    required OfficerProfile officer,
+    required UdCase ud,
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    final bn = AppLanguageController.instance.isBengali;
+    String t(String b, String e) => bn ? b : e;
+    pw.TextStyle normal([double size = 11]) => pw.TextStyle(fontSize: size);
+    pw.TextStyle bold([double size = 11]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
+    pw.Widget row(String label, String value) => pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 7),
+          child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.SizedBox(width: 170, child: pw.Text(label, style: bold())),
+            pw.Expanded(child: pw.Text(value, style: normal())),
+          ]),
+        );
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(44, 34, 44, 36),
+        build: (_) => [
+          pw.Center(child: pw.Text(t('পশ্চিমবঙ্গ সরকার', 'GOVERNMENT OF WEST BENGAL'), style: bold(12))),
+          pw.Center(child: pw.Text(t('পুলিশ বিভাগ', 'POLICE DEPARTMENT'), style: bold(12))),
+          pw.SizedBox(height: 6),
+          pw.Center(child: pw.Text(t('UD মামলার চূড়ান্ত প্রতিবেদন', 'FINAL REPORT OF UD CASE'), style: bold(16))),
+          pw.SizedBox(height: 20),
+          row(t('UD মামলা নং', 'UD Case No.'), ud.udNo),
+          row(t('থানা', 'Police Station'), ud.policeStation),
+          row(t('জেলা', 'District'), ud.district),
+          row(t('জিডিই নং ও তারিখ', 'GDE No. & Date'), ud.gdeNo),
+          row(t('মৃত ব্যক্তির নাম', 'Name of deceased'), ud.deceasedName),
+          row(t('বয়স/লিঙ্গ', 'Age/Sex'), '${ud.deceasedAge} / ${ud.deceasedSex}'),
+          row(t('ঠিকানা', 'Address'), ud.deceasedAddress),
+          row(t('মৃতদেহ উদ্ধারের স্থান', 'Place found'), ud.placeFound),
+          row(t('সম্ভাব্য মৃত্যুর কারণ', 'Probable cause of death'), ud.probableCauseOfDeath),
+          pw.SizedBox(height: 12),
+          pw.Text(t('তদন্তের সংক্ষিপ্ত বিবরণ:', 'Brief facts of enquiry:'), style: bold()),
+          pw.SizedBox(height: 6),
+          pw.Container(
+            width: double.infinity,
+            constraints: const pw.BoxConstraints(minHeight: 120),
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)),
+            child: pw.Text(ud.briefFacts, style: normal(), textAlign: pw.TextAlign.justify),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Text(t('তদন্তে প্রাপ্ত মতামত/উপসংহার:', 'Opinion / conclusion of enquiry:'), style: bold()),
+          pw.SizedBox(height: 6),
+          pw.Container(
+            width: double.infinity,
+            constraints: const pw.BoxConstraints(minHeight: 100),
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)),
+            child: pw.Text(ud.remarks.isEmpty ? ud.probableCauseOfDeath : ud.remarks, style: normal(), textAlign: pw.TextAlign.justify),
+          ),
+          pw.SizedBox(height: 18),
+          pw.Text(
+            t(
+              'উপরোক্ত তথ্য ও তদন্তে প্রাপ্ত উপাদানের ভিত্তিতে UD মামলাটি চূড়ান্ত নিষ্পত্তির জন্য পেশ করা হলো।',
+              'On the basis of the above facts and materials collected during enquiry, the UD case is submitted for final disposal.',
+            ),
+            style: normal(),
+            textAlign: pw.TextAlign.justify,
+          ),
+          pw.SizedBox(height: 46),
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+              pw.Text(t('পেশ করা হলো', 'Submitted'), style: normal()),
+              pw.SizedBox(height: 24),
+              pw.Text('${officer.rank} ${officer.name}', style: bold()),
+              pw.Text(officer.policeStation, style: normal()),
             ]),
           ),
         ],
