@@ -1,6 +1,7 @@
 name: investigo
-version: 0.9.8+98
+description: Bilingual investigation workflow and official document application.
 publish_to: 'none'
+version: 0.9.9+99
 
 environment:
   sdk: '>=3.4.0 <4.0.0'

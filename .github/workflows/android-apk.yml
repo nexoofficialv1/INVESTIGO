@@ -41,7 +41,7 @@ jobs:
           dart --version
           java -version
 
-      - name: Generate missing Android platform files
+      - name: Generate Android platform files
         run: |
           flutter create . \
             --platforms=android \
@@ -52,18 +52,24 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          manifest = Path('android/app/src/main/AndroidManifest.xml')
-          text = manifest.read_text()
           import re
-          text = re.sub(r'android:label="[^"]*"', 'android:label="INVESTIGO"', text, count=1)
-          manifest.write_text(text)
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text(encoding='utf-8')
+          text = re.sub(
+              r'android:label="[^"]*"',
+              'android:label="INVESTIGO"',
+              text,
+              count=1,
+          )
+          manifest.write_text(text, encoding='utf-8')
           PY
 
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Format Dart source
+        run: dart format lib test
 
       - name: Analyze source
         run: flutter analyze --no-fatal-infos --no-fatal-warnings

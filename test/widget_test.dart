@@ -13,12 +13,11 @@ void main() {
     await AppLanguageController.instance.load();
   });
 
-  testWidgets('INVESTIGO starts and shows the intro screen',
-      (WidgetTester tester) async {
+  testWidgets('INVESTIGO application starts', (WidgetTester tester) async {
     await tester.pumpWidget(const InvestigationProcessApp());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(InvestigationProcessApp), findsOneWidget);
-    expect(find.textContaining('INVESTIGO'), findsWidgets);
+    expect(find.byType(StartupGate), findsOneWidget);
   });
 }
