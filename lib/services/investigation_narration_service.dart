@@ -368,20 +368,35 @@ class InvestigationNarrationService {
 
   List<String> _extractTimes(String source) {
     final results = <String>[];
+    final searchable = _toAsciiDigits(source);
     final patterns = <RegExp>[
-      RegExp(r'\b(?:[01]?\d|2[0-3])[:.]\d{2}\s*(?:hrs?|ঘটিকা|টা)?\b', caseSensitive: false),
-      RegExp(r'\b\d{1,2}\s*(?:টা|ঘটিকায়|ঘটিকায়)\b'),
-      RegExp(r'\b(?:সকাল|দুপুর|বিকাল|সন্ধ্যা|রাত)\s*\d{1,2}(?::\d{2})?\s*(?:টা|ঘটিকা|টায়|টায়)?\b'),
+      RegExp(
+        r'(?:^|\s)((?:[01]?\d|2[0-3])[:.]\d{2}\s*(?:hrs?|ঘটিকা|টা)?)',
+        caseSensitive: false,
+      ),
+      RegExp(r'(?:^|\s)(\d{1,2}\s*(?:টা|ঘটিকায়|ঘটিকায়))'),
+      RegExp(
+        r'(?:সকাল|দুপুর|বিকাল|সন্ধ্যা|রাত)\s*\d{1,2}(?::\d{2})?\s*(?:টা|ঘটিকা|টায়|টায়)?',
+      ),
     ];
     for (final pattern in patterns) {
-      for (final match in pattern.allMatches(source)) {
-        final value = match.group(0)?.trim();
+      for (final match in pattern.allMatches(searchable)) {
+        final value = (match.groupCount >= 1 ? match.group(1) : match.group(0))?.trim();
         if (value != null && value.isNotEmpty && !results.contains(value)) {
           results.add(value);
         }
       }
     }
     return results;
+  }
+
+  String _toAsciiDigits(String value) {
+    const bn = '০১২৩৪৫৬৭৮৯';
+    var converted = value;
+    for (var i = 0; i < bn.length; i++) {
+      converted = converted.replaceAll(bn[i], '$i');
+    }
+    return converted;
   }
 
   List<String> _extractPlaces(String source) {
@@ -425,23 +440,50 @@ class InvestigationNarrationService {
 
   List<String> _extractWitnessNames(String source) {
     final results = <String>[];
-    final patterns = <RegExp>[
-      RegExp(r'(?:সাক্ষী|witness(?:es)?)\s*(?:নাম(?:ে)?|namely|:|-)?\s*([^।.\n]{3,100})', caseSensitive: false),
-      RegExp(r'([^।,\n]{2,40})\s*(?:নামে সাক্ষী|কে সাক্ষী হিসেবে)', caseSensitive: false),
-    ];
-    for (final pattern in patterns) {
-      for (final match in pattern.allMatches(source)) {
-        final chunk = match.group(1)?.trim() ?? '';
-        for (final raw in chunk.split(RegExp(r'\s*(?:,|ও|and|&)\s*', caseSensitive: false))) {
-          final value = raw
-              .replaceAll(RegExp(r'\b(?:কে|এর|statement|বিবৃতি|পরীক্ষা).*$'), '')
-              .trim();
-          if (value.length >= 2 && value.length <= 45 && !results.contains(value)) {
-            results.add(value);
-          }
+
+    void addChunk(String chunk) {
+      var cleaned = chunk.trim();
+      cleaned = cleaned
+          .replaceFirst(
+            RegExp(
+              r'(?:কে|দেরকে)?\s*(?:পরীক্ষা|জিজ্ঞাসাবাদ|examin|statement|বিবৃতি|রেকর্ড).*',
+              caseSensitive: false,
+            ),
+            '',
+          )
+          .trim();
+      for (final raw in cleaned.split(
+        RegExp(r'\s*(?:,|;|\sও\s|\sand\s|&)\s*', caseSensitive: false),
+      )) {
+        final value = raw
+            .replaceFirst(RegExp(r'^(?:নামে|namely)\s*', caseSensitive: false), '')
+            .replaceFirst(RegExp(r'(?:কে|দেরকে)$'), '')
+            .trim();
+        if (value.length >= 2 &&
+            value.length <= 45 &&
+            !results.contains(value)) {
+          results.add(value);
         }
       }
     }
+
+    final directPatterns = <RegExp>[
+      RegExp(
+        r'(?:সাক্ষী|witness(?:es)?)\s*(?:নাম(?:ে)?|namely|:|-)\s*([^।.\n]{3,120})',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'([^।,\n]{2,80})\s*(?:নামে সাক্ষী|কে সাক্ষী হিসেবে)',
+        caseSensitive: false,
+      ),
+    ];
+    for (final pattern in directPatterns) {
+      for (final match in pattern.allMatches(source)) {
+        final chunk = match.group(1)?.trim();
+        if (chunk != null && chunk.isNotEmpty) addChunk(chunk);
+      }
+    }
+
     return results.take(12).toList();
   }
 
