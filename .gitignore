@@ -1,0 +1,15 @@
+.dart_tool/
+.packages
+.pub/
+build/
+android/.gradle/
+android/local.properties
+.idea/
+.vscode/
+*.iml
+*.jks
+*.keystore
+.env
+backend_server/uploads/*
+!backend_server/uploads/.gitkeep
+.investigo_*_backup_*/

@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Investigation & Process Web</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#fff4ea;color:#123}
+    header{background:#004b3f;color:white;padding:22px;text-align:center;font-size:24px;font-weight:800}
+    main{max-width:900px;margin:20px auto;padding:0 14px}
+    input,button{padding:12px;margin:6px 0;width:100%;box-sizing:border-box}
+    button{background:#005845;color:#fff;border:0;border-radius:8px;font-weight:700}
+    .card{background:white;border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 2px 12px #0002}
+    pre{white-space:pre-wrap;background:#f6f6f6;padding:10px;border-radius:8px}
+  </style>
+</head>
+<body>
+<header>Investigation & Process Web Panel</header>
+<main>
+  <div class="card">
+    <h3>Server Login / Token</h3>
+    <input id="api" placeholder="API Base URL e.g. https://api.yourdomain.com" />
+    <input id="token" placeholder="Bearer Token / API_TOKEN" />
+    <button onclick="loadCases()">Load Cases</button>
+  </div>
+  <div id="out"></div>
+</main>
+<script>
+async function loadCases(){
+  const api=document.getElementById('api').value.replace(/\/+$/,'');
+  const token=document.getElementById('token').value;
+  const out=document.getElementById('out');
+  out.innerHTML='Loading...';
+  try{
+    const r=await fetch(api+'/api/cases',{headers:{Authorization:'Bearer '+token}});
+    const j=await r.json();
+    if(!r.ok){out.innerHTML='<div class="card">Error: '+JSON.stringify(j)+'</div>';return;}
+    out.innerHTML=(j.cases||[]).map(c=>`<div class="card"><h3>${c.ps_case_no||c.id}</h3><p><b>Section:</b> ${c.sections||''}</p><p><b>Complainant:</b> ${c.complainant_name||''}</p><p><b>PO:</b> ${c.po||''}</p><pre>${c.gist||''}</pre></div>`).join('') || '<div class="card">No cases found</div>';
+  }catch(e){out.innerHTML='<div class="card">'+e+'</div>'}
+}
+</script>
+</body>
+</html>
