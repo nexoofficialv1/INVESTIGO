@@ -104,3 +104,7 @@ The Form 5363 renderer now uses `OfficialTemplateSpec.cdColumnRatios` as the sin
 - `BilingualTranslationService` prepares Bengali/English ML Kit models and translates Statement/CD content at render time without replacing the original stored text.
 - `InvestigationNarrationService` creates approved pending CD actions; `CdBuilderScreen` consumes those actions into the official Form 5363 table.
 - `UdNarrationService` converts a single Bengali/English narrative into the shared `UdCase` field map. Inquest, Form 5371 and UD Final Report continue to render from that one model.
+
+## v194 Document Preview Pipeline
+
+CD and Statement preview are independent of translation-model readiness. One cached PDF future feeds preview, print and PDF sharing; DOC export is separately guarded.

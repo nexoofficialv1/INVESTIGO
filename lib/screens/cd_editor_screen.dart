@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/case_file.dart';
 import '../models/cd_entry.dart';
 import '../models/officer_profile.dart';
-import '../services/bilingual_translation_service.dart';
 import '../services/doc_export_service.dart';
 import '../services/local_store_service.dart';
 import '../services/pdf_service.dart';
@@ -23,8 +22,6 @@ class CdEditorScreen extends StatefulWidget {
 
 class _CdEditorScreenState extends State<CdEditorScreen> {
   final LocalStoreService _store = LocalStoreService();
-  final BilingualTranslationService _translation =
-      BilingualTranslationService.instance;
   late CdEntry _cd;
   late final TextEditingController cdDate;
   late final TextEditingController startTime;
@@ -116,24 +113,10 @@ class _CdEditorScreenState extends State<CdEditorScreen> {
 
   Future<void> _previewPdf() async {
     await _save(finalSave: false);
-    try {
-      await _translation.prepareForTexts(
-        _currentLines().expand(
-          (line) => <String>[line.synopsis, line.proceedings],
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Bengali/English translation model প্রস্তুত করা যায়নি: $error',
-          ),
-        ),
-      );
-      return;
-    }
     if (!mounted) return;
+
+    // Translation is best-effort. Preview/PDF/DOC must remain available even
+    // when the optional on-device language model is unavailable.
     final cdForPreview = _currentCd();
     final baseName = 'CD_${widget.caseFile.psCaseNo.replaceAll('/', '_')}_${_cd.cdNumber}';
     await Navigator.push(

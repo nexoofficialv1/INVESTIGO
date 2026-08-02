@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
@@ -16,6 +18,8 @@ class BilingualTranslationService {
       OnDeviceTranslatorModelManager();
 
   bool _modelsReady = false;
+  Future<void>? _modelPreparation;
+  DateTime? _modelRetryAfter;
 
   bool get modelsReady => _modelsReady;
 
@@ -44,20 +48,52 @@ class BilingualTranslationService {
       );
     }
 
-    final bengaliCode = TranslateLanguage.bengali.bcpCode;
-    final englishCode = TranslateLanguage.english.bcpCode;
-
-    final bnReady = await _modelManager.isModelDownloaded(bengaliCode) ||
-        await _modelManager.downloadModel(bengaliCode);
-    final enReady = await _modelManager.isModelDownloaded(englishCode) ||
-        await _modelManager.downloadModel(englishCode);
-
-    if (!bnReady || !enReady) {
+    final retryAfter = _modelRetryAfter;
+    if (retryAfter != null && DateTime.now().isBefore(retryAfter)) {
       throw StateError(
-        'Bengali/English translation model download failed. Connect to the internet once and try again.',
+        'Translation model is temporarily unavailable. Preview/export will use the original text.',
       );
     }
-    _modelsReady = true;
+
+    final active = _modelPreparation;
+    if (active != null) {
+      await active;
+      return;
+    }
+
+    final preparation = _prepareModelsOnce();
+    _modelPreparation = preparation;
+    try {
+      await preparation;
+    } finally {
+      _modelPreparation = null;
+    }
+  }
+
+  Future<void> _prepareModelsOnce() async {
+    try {
+      final bengaliCode = TranslateLanguage.bengali.bcpCode;
+      final englishCode = TranslateLanguage.english.bcpCode;
+      final bnReady = await _ensureModel(bengaliCode);
+      final enReady = await _ensureModel(englishCode);
+      if (!bnReady || !enReady) {
+        throw StateError(
+          'Bengali/English translation model download failed. Connect to the internet once and try again.',
+        );
+      }
+      _modelsReady = true;
+      _modelRetryAfter = null;
+    } catch (_) {
+      _modelRetryAfter = DateTime.now().add(const Duration(minutes: 1));
+      rethrow;
+    }
+  }
+
+  Future<bool> _ensureModel(String languageCode) async {
+    if (await _modelManager.isModelDownloaded(languageCode)) return true;
+    return _modelManager
+        .downloadModel(languageCode)
+        .timeout(const Duration(seconds: 20));
   }
 
   bool needsTranslation(
@@ -118,8 +154,7 @@ class BilingualTranslationService {
       }
     } catch (_) {
       // PDF/DOC generation must remain available even if a model is not ready.
-      // Screens call prepareModels() first and show a user-facing error; this
-      // fallback protects automated tests and legacy/offline exports.
+      // Preserve the original officer-entered text instead of aborting.
       return source;
     }
   }

@@ -75,3 +75,7 @@ Official forms must not combine rotated content, nested `Expanded`, and fixed-he
 - Statement/CD preview prepares translation models before navigation and shows a user-facing error if the first-time model download fails.
 - Render services fall back to original text in test/non-mobile contexts so PDF/DOC generation does not crash.
 - UD narration extraction reports missing core fields and requires preview verification.
+
+## v194 Preview and Export Errors
+
+Preview shows loading, error details and Retry. PDF/DOC sharing catches failures. Translation download is time-bounded and enters a short cooldown so repeated CD rows do not repeatedly wait.

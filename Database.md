@@ -84,3 +84,7 @@ No database migration is required. Existing `CdEntry.tableLines` records remain 
 ## v193 data-flow note
 
 No duplicate UD document database was introduced. Auto-filled narration values are saved into the existing `UdCase` record, which remains the single source for Inquest/Surathal, Dead Body Challan and UD Final Report. Statement and CD source text remains unchanged in storage; target-language text is generated during preview/export.
+
+## v194 Data Impact
+
+No schema or migration change. Preview/export reads the saved CD and Statement records.

@@ -63,3 +63,7 @@ When generating Form 5363, preserve each investigation action as an individual `
 ## UD smart narration guidance
 
 For best extraction, officers may write natural sentences or use labels such as `UD No`, `GDE No`, `Name of deceased`, `Place where dead body found`, `Body position`, `Dress`, `Probable cause of death`, `Witness 1` and `Witness 2`. The full narration is always retained as `briefFacts` for verification.
+
+## v194 Translation Rule
+
+Attempt target-language translation, but never block official document access. Preserve original entered text when the model is unavailable.

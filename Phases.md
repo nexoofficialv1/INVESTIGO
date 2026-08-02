@@ -120,3 +120,7 @@ Pending outside this source package:
 - Statement and CD Bengali/English render translation
 - Smart daily narration entry point and direct CD Writer hand-off
 - UD single-narration auto-fill for all linked UD documents
+
+## RC-1 v194
+
+Completed mobile CD preview/PDF/DOC reliability and non-blocking translation fallback.

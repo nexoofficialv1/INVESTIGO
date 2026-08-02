@@ -60,3 +60,7 @@ The official CD renderer continues to use Officer Profile and Case data only. No
 ## v193 on-device translation
 
 Bengali/English translation uses downloadable ML Kit language models. The app downloads the language models once and performs translation on the mobile device. Original police narrative remains stored locally and officer verification is required before final document export. Translation attribution is displayed in the relevant screens.
+
+## v194 Export Handling
+
+PDF bytes remain in preview memory; DOC files use the app temporary directory and platform share sheet. No silent upload is introduced.

@@ -26,9 +26,16 @@ class PdfService {
       final bold = await PdfGoogleFonts.notoSerifBengaliBold();
       return pw.ThemeData.withFont(base: regular, bold: bold);
     } catch (_) {
-      final regular = await PdfGoogleFonts.notoSansBengaliRegular();
-      final bold = await PdfGoogleFonts.notoSansBengaliBold();
-      return pw.ThemeData.withFont(base: regular, bold: bold);
+      try {
+        final regular = await PdfGoogleFonts.notoSansBengaliRegular();
+        final bold = await PdfGoogleFonts.notoSansBengaliBold();
+        return pw.ThemeData.withFont(base: regular, bold: bold);
+      } catch (_) {
+        return pw.ThemeData.withFont(
+          base: pw.Font.helvetica(),
+          bold: pw.Font.helveticaBold(),
+        );
+      }
     }
   }
 

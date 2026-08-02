@@ -124,16 +124,7 @@ class _StatementScreenState extends State<StatementScreen> {
   }
 
   Future<void> _preview(StatementEntry entry) async {
-    if (!await _prepareTranslationModels(
-      values: <String>[
-        entry.witnessName,
-        entry.witnessDetails,
-        entry.statementType,
-        entry.body,
-      ],
-    )) {
-      return;
-    }
+    // Document preview is never blocked by translation-model availability.
     if (!mounted) return;
     await Navigator.push(
       context,
