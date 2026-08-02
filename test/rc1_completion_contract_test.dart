@@ -13,7 +13,12 @@ void main() {
     expect(dashboard, contains('SettingsScreen'));
     expect(dashboard, contains("'INVESTIGO'"));
     expect(pdf, isNot(contains('final estimatedHeight')));
-    expect(pdf, contains('horizontalInside: pw.BorderSide(width: 0.55)'));
+    final cdStart = pdf.indexOf('pw.Widget _wbOfficialCdContinuousTable');
+    final cdEnd = pdf.indexOf('pw.Widget _wbOfficialCdSignature', cdStart);
+    final cdRenderer = pdf.substring(cdStart, cdEnd);
+    expect(cdRenderer, contains('final ratios = OfficialTemplateSpec.cdColumnRatios'));
+    expect(cdRenderer, contains("'Particulars of Enquiry.'"));
+    expect(cdRenderer, isNot(contains('horizontalInside:')));
   });
 
   test('production source contains no station-specific defaults', () {

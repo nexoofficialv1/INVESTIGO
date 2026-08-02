@@ -95,3 +95,6 @@ FSL Form 5203 and A Form now use dedicated PDF and DOC renderers. Dashboard rout
 - Case Diary PDF rows are content-height driven; fixed estimated row heights are prohibited.
 - UD and NCR document identity fields are bound to the current Officer Profile at save/export time.
 - FSL Form 5203 and A Form remain inside the Regular Case Forms workspace.
+
+## RC-1 v189 — Official CD rendering boundary
+The Form 5363 renderer now uses `OfficialTemplateSpec.cdColumnRatios` as the single layout source for PDF and DOC output. Investigation actions are rendered as continuous rows without horizontal action dividers, matching the official case-diary visual structure. Header normalization derives the case year, official date display, Roman CD number, and station short name from case/profile data.

@@ -56,3 +56,6 @@ No prompt change. Official FSL/A Form exports do not use generative AI.
 ## RC-1 assistant constraint
 
 Offline assistant output must never invent Police Station or District. Document identity fields come exclusively from the current Officer Profile. Generated CD text may propose investigation actions, but official row metadata remains officer-editable before approval.
+
+## RC-1 v189 — CD output rule
+When generating Form 5363, preserve each investigation action as an individual `CdTableLine`, but render all actions inside one continuous four-column body without horizontal action separators. Never derive the form year from the device clock when a case year is available.

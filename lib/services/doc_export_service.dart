@@ -21,6 +21,50 @@ class DocExportService {
       .replaceAll('&#x2F;', '/')
       .replaceAll('\n', '<br/>');
 
+
+  String _shortPsName(String ps) => ps
+      .replaceAll(RegExp(r'Police\s+Station', caseSensitive: false), 'PS')
+      .replaceAll(RegExp(r'P\.?\s*S\.?$', caseSensitive: false), 'PS')
+      .trim();
+
+  String _barePsName(String ps) => ps
+      .replaceAll(
+        RegExp(r'\s+(Police\s+Station|P\.?\s*S\.?)$', caseSensitive: false),
+        '',
+      )
+      .trim();
+
+  String _officialDate(String raw) {
+    final value = raw.trim();
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    final day = parsed.day.toString().padLeft(2, '0');
+    final month = parsed.month.toString().padLeft(2, '0');
+    return '$day.$month.${parsed.year}';
+  }
+
+  String _caseYear(CaseFile caseFile) {
+    final dateMatch = RegExp(r'(?:19|20)\d{2}').firstMatch(caseFile.caseDate);
+    if (dateMatch != null) return dateMatch.group(0)!;
+    final numberMatch = RegExp(r'(?:19|20)\d{2}').firstMatch(caseFile.psCaseNo);
+    return numberMatch?.group(0) ?? DateTime.now().year.toString();
+  }
+
+  String _roman(int number) {
+    if (number <= 0) return number.toString();
+    const values = <int>[1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+    const symbols = <String>['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+    var remaining = number;
+    final out = StringBuffer();
+    for (var i = 0; i < values.length; i++) {
+      while (remaining >= values[i]) {
+        out.write(symbols[i]);
+        remaining -= values[i];
+      }
+    }
+    return out.toString();
+  }
+
   String _page(String title, String body) => '''
 <html>
 <head>
@@ -30,7 +74,7 @@ class DocExportService {
   @page { size: A4; margin: 18mm 14mm 18mm 14mm; }
   body { font-family: "Times New Roman", serif; font-size: 12pt; color: #000; }
   table { border-collapse: collapse; width: 100%; }
-  td, th { border: 1px solid #555; padding: 4px; vertical-align: top; }
+  td, th { border: 1px solid #000; padding: 4px; vertical-align: top; }
   .center { text-align: center; }
   .right { text-align: right; }
   .bold { font-weight: bold; }
@@ -68,15 +112,16 @@ class DocExportService {
         .map(
           (line) => '''
 <tr class="entry-row">
-  <td class="center" style="width:10%">${_e(line.noAndHour)}</td>
-  <td class="center" style="width:10%">${_e(line.placeOfEntry)}</td>
-  <td class="center" style="width:13%">${_e(line.synopsis)}</td>
-  <td class="justify" style="width:67%">${_e(line.proceedings)}</td>
+  <td class="center" style="width:9%">${_e(line.noAndHour)}</td>
+  <td class="center" style="width:9%">${_e(line.placeOfEntry)}</td>
+  <td class="center" style="width:11%">${_e(line.synopsis)}</td>
+  <td class="justify" style="width:71%">${_e(line.proceedings)}</td>
 </tr>''',
         )
         .join();
-    final year = DateTime.now().year;
-    final ps = officer.policeStation.replaceAll('Police Station', 'PS').trim();
+    final year = _caseYear(caseFile);
+    final psHeader = _barePsName(officer.policeStation);
+    final psSignature = _shortPsName(officer.policeStation);
     final html = '''
 <div class="bold">
   <span>West Bengal form No. 5363</span><span style="float:right">OF $year</span>
@@ -84,17 +129,21 @@ class DocExportService {
 <div class="center bold">CASE DIARY UNDER SECTION 192 BNSS</div>
 <div class="center bold">(P.R.B FROM NO. 43 - Vide <i>Rule 229</i>)</div>
 <table class="no-border small">
-<tr><td class="bold">Police Station: -${_e(ps)}</td><td class="bold right">District: -${_e(officer.district)}</td></tr>
-<tr><td class="bold">First information No: -${_e(caseFile.psCaseNo)}</td><td class="bold">Dated: -${_e(caseFile.caseDate)} &nbsp;&nbsp;&nbsp; Section: -${_e(caseFile.sections)}</td></tr>
-<tr><td colspan="2" class="bold">Name of Complainant: - ${_e(caseFile.complainantName)}</td></tr>
-<tr><td class="bold">Case Diary No: -${cd.cdNumber}</td><td class="bold">Dated: -${_e(cd.cdDate)}</td></tr>
+<tr><td class="bold">Police Station: -${_e(psHeader)}</td><td class="bold right">District: -${_e(officer.district)}</td></tr>
+<tr><td class="bold">First information No: -${_e(caseFile.psCaseNo)}</td><td class="bold">Dated: -${_e(_officialDate(caseFile.caseDate))} &nbsp;&nbsp;&nbsp; Section: -${_e(caseFile.sections)}</td></tr>
+<tr><td colspan="2" class="bold">Name of Complainant: -${_e(caseFile.complainantName)}</td></tr>
+<tr><td class="bold">Case Diary No: -${_roman(cd.cdNumber)}</td><td class="bold">Dated: -${_e(_officialDate(cd.cdDate))}</td></tr>
 </table>
 <table class="cd">
-<tr><td class="center">Arrested and sent up</td><td class="center">Arrested and released on bail.</td><td class="center" colspan="2">At large.</td></tr>
+<colgroup><col style="width:33.33%"><col style="width:33.33%"><col style="width:33.34%"></colgroup>
+<tr><td class="center">Arrested and sent up</td><td class="center">Arrested and released on bail.</td><td class="center">At large.</td></tr>
+</table>
+<table class="cd">
+<colgroup><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:71%"></colgroup>
 <tr><td colspan="3" class="bold">Particulars of Enquiry.</td><td></td></tr>
-<tr><td class="center" style="width:10%">No. and<br/>hour of<br/>entry.</td><td class="center" style="width:10%">Place of<br/>entry.</td><td class="center" style="width:13%">Synopsis of<br/>entry.</td><td style="width:67%"></td></tr>
+<tr><td class="center">No. and<br/>hour of<br/>entry.</td><td class="center">Place of<br/>entry.</td><td class="center">Synopsis of<br/>entry.</td><td></td></tr>
 $entryRows
-<tr class="signature-row"><td></td><td></td><td></td><td class="right" style="padding-right:70px;padding-top:20px">Submitted<br/><br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(ps)}</td></tr>
+<tr class="signature-row"><td></td><td></td><td></td><td class="right" style="padding-right:70px;padding-top:20px">Submitted<br/><br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(psSignature)}</td></tr>
 </table>
 ''';
     return _docBytes(_page('CD-${cd.cdNumber}', html));

@@ -77,3 +77,6 @@ No schema change. FSL/A Form remain Regular Case domain documents and bind to Of
 ## Profile binding rule
 
 Officer Profile is the authoritative source for Police Station and District during UD/NCR save and export. Loaded legacy drafts may contain older station values, but the current profile values replace them when a document is collected for saving or generation. No schema migration is required because existing JSON keys remain unchanged.
+
+## RC-1 v189
+No database migration is required. Existing `CdEntry.tableLines` records remain backward compatible; this update changes rendering only.

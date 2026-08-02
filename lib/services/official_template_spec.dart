@@ -1,11 +1,11 @@
 /// Locked layout measurements for official forms.
 /// Values are shared by renderers so Preview/PDF/DOC remain aligned.
 abstract final class OfficialTemplateSpec {
-  static const cdColumnRatios = <double>[0.10, 0.10, 0.13, 0.67];
+  static const cdColumnRatios = <double>[0.09, 0.09, 0.11, 0.71];
   static const cdFormNo = '5363';
   static const cdBpFormNo = '38';
 
-  static const finalCdColumnRatios = <double>[0.10, 0.10, 0.13, 0.67];
+  static const finalCdColumnRatios = <double>[0.09, 0.09, 0.11, 0.71];
 
   static const if5FormNo = '39';
   static const if5PropertyColumnRatios = <double>[0.06, 0.24, 0.14, 0.16, 0.25, 0.15];

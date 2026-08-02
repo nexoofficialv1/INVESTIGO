@@ -86,7 +86,7 @@ class PdfService {
             ),
           ];
 
-    const maxCharsPerPage = 2500;
+    const maxCharsPerPage = 3100;
     final normalized = <CdTableLine>[];
     for (final line in sourceLines) {
       final parts = _splitTextSafely(line.proceedings, maxCharsPerPage);
@@ -156,7 +156,51 @@ class PdfService {
     return result;
   }
 
-  String _shortPsName(String ps) => ps.replaceAll('Police Station', 'PS').trim();
+  String _shortPsName(String ps) {
+    final normalized = ps
+        .replaceAll(RegExp(r'Police\s+Station', caseSensitive: false), 'PS')
+        .replaceAll(RegExp(r'P\.?\s*S\.?$', caseSensitive: false), 'PS')
+        .trim();
+    return normalized;
+  }
+
+  String _barePsName(String ps) => ps
+      .replaceAll(
+        RegExp(r'\s+(Police\s+Station|P\.?\s*S\.?)$', caseSensitive: false),
+        '',
+      )
+      .trim();
+
+  String _officialDate(String raw) {
+    final value = raw.trim();
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    final day = parsed.day.toString().padLeft(2, '0');
+    final month = parsed.month.toString().padLeft(2, '0');
+    return '$day.$month.${parsed.year}';
+  }
+
+  String _caseYear(CaseFile caseFile) {
+    final dateMatch = RegExp(r'(?:19|20)\d{2}').firstMatch(caseFile.caseDate);
+    if (dateMatch != null) return dateMatch.group(0)!;
+    final numberMatch = RegExp(r'(?:19|20)\d{2}').firstMatch(caseFile.psCaseNo);
+    return numberMatch?.group(0) ?? DateTime.now().year.toString();
+  }
+
+  String _roman(int number) {
+    if (number <= 0) return number.toString();
+    const values = <int>[1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+    const symbols = <String>['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+    var remaining = number;
+    final out = StringBuffer();
+    for (var i = 0; i < values.length; i++) {
+      while (remaining >= values[i]) {
+        out.write(symbols[i]);
+        remaining -= values[i];
+      }
+    }
+    return out.toString();
+  }
 
   pw.Widget _wbOfficialCdHeader({
     required OfficerProfile officer,
@@ -171,7 +215,7 @@ class PdfService {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(_t('পশ্চিমবঙ্গ ফর্ম নং ৫৩৬৩', 'West Bengal form No. 5363'), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-            pw.Text(_t('${DateTime.now().year} সালের', 'OF ${DateTime.now().year}'), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.Text(_t('${_caseYear(caseFile)} সালের', 'OF ${_caseYear(caseFile)}'), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
           ],
         ),
         pw.SizedBox(height: 4),
@@ -185,7 +229,7 @@ class PdfService {
         pw.SizedBox(height: 4),
         pw.Row(
           children: [
-            pw.Expanded(flex: 3, child: pw.Text(_t('থানা: -${_shortPsName(officer.policeStation)}', 'Police Station: -${_shortPsName(officer.policeStation)}'), style: _cdTopStyle())),
+            pw.Expanded(flex: 3, child: pw.Text(_t('থানা: -${_barePsName(officer.policeStation)}', 'Police Station: -${_barePsName(officer.policeStation)}'), style: _cdTopStyle())),
             pw.Expanded(flex: 2, child: pw.Text(_t('জেলা: -${officer.district}', 'District: -${officer.district}'), style: _cdTopStyle())),
           ],
         ),
@@ -193,15 +237,15 @@ class PdfService {
         pw.Row(
           children: [
             pw.Expanded(flex: 2, child: pw.Text(_t('প্রথম তথ্য নং: -${caseFile.psCaseNo}', 'First information No: -${caseFile.psCaseNo}'), style: _cdTopStyle())),
-            pw.Expanded(flex: 1, child: pw.Text(_t('তারিখ: -${caseFile.caseDate}', 'Dated: -${caseFile.caseDate}'), style: _cdTopStyle())),
+            pw.Expanded(flex: 1, child: pw.Text(_t('তারিখ: -${_officialDate(caseFile.caseDate)}', 'Dated: -${_officialDate(caseFile.caseDate)}'), style: _cdTopStyle())),
             pw.Expanded(flex: 2, child: pw.Text(_t('ধারা: -${caseFile.sections}', 'Section: -${caseFile.sections}'), style: _cdTopStyle())),
           ],
         ),
         pw.Text(_t('অভিযোগকারীর নাম: -${caseFile.complainantName}', 'Name of Complainant: -${caseFile.complainantName}'), style: _cdTopStyle()),
         pw.Row(
           children: [
-            pw.Expanded(child: pw.Text(_t('কেস ডায়েরি নং: -${cd.cdNumber}', 'Case Diary No: -${cd.cdNumber}'), style: _cdTopStyle())),
-            pw.Expanded(child: pw.Text(_t('তারিখ: -${cd.cdDate}', 'Dated: -${cd.cdDate}'), style: _cdTopStyle())),
+            pw.Expanded(child: pw.Text(_t('কেস ডায়েরি নং: -${_roman(cd.cdNumber)}', 'Case Diary No: -${_roman(cd.cdNumber)}'), style: _cdTopStyle())),
+            pw.Expanded(child: pw.Text(_t('তারিখ: -${_officialDate(cd.cdDate)}', 'Dated: -${_officialDate(cd.cdDate)}'), style: _cdTopStyle())),
           ],
         ),
         pw.SizedBox(height: 4),
@@ -246,143 +290,65 @@ class PdfService {
             ),
           ];
 
-    pw.Widget marginalCells(CdTableLine line, {bool header = false}) {
-      return pw.Table(
-        border: const pw.TableBorder(
-          verticalInside: pw.BorderSide(width: 0.55),
+    final ratios = OfficialTemplateSpec.cdColumnRatios;
+    final widths = <int, pw.TableColumnWidth>{
+      for (var i = 0; i < ratios.length; i++)
+        i: pw.FlexColumnWidth(ratios[i]),
+    };
+
+    pw.Widget bodyCell(
+      String text, {
+      bool center = false,
+      bool bold = false,
+      double fontSize = 9.4,
+      double horizontalPadding = 4,
+      double verticalPadding = 3,
+    }) {
+      return pw.Padding(
+        padding: pw.EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
         ),
-        columnWidths: const {
-          0: pw.FlexColumnWidth(0.86),
-          1: pw.FlexColumnWidth(0.90),
-          2: pw.FlexColumnWidth(1.14),
-        },
-        children: [
-          pw.TableRow(
-            verticalAlignment: pw.TableCellVerticalAlignment.top,
-            children: [
-              _officialCell(
-                line.noAndHour,
-                center: true,
-                fontSize: header ? 9.4 : 9.2,
-                minHeight: header ? 46 : null,
-              ),
-              _officialCell(
-                line.placeOfEntry,
-                center: true,
-                fontSize: header ? 9.4 : 9.2,
-                minHeight: header ? 46 : null,
-              ),
-              _officialCell(
-                line.synopsis,
-                center: true,
-                fontSize: header ? 9.4 : 9.2,
-                minHeight: header ? 46 : null,
-              ),
-            ],
+        child: pw.Text(
+          text,
+          textAlign: center ? pw.TextAlign.center : pw.TextAlign.justify,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            lineSpacing: center ? 0 : 1.2,
           ),
-        ],
+        ),
       );
     }
 
-    final rows = <pw.TableRow>[
-      pw.TableRow(
-        children: [
-          pw.Container(
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(width: 0.55),
-              ),
-            ),
-            padding: const pw.EdgeInsets.fromLTRB(8, 3, 8, 3),
-            child: pw.Text(
-              _t('তদন্তের বিবরণ।', 'Particulars of Enquiry.'),
-              style: pw.TextStyle(
-                fontSize: 11.5,
-                fontWeight: pw.FontWeight.bold,
-              ),
-            ),
-          ),
-          pw.Container(
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(width: 0.55),
-              ),
-            ),
-            height: 23,
-          ),
-        ],
-      ),
-      pw.TableRow(
-        verticalAlignment: pw.TableCellVerticalAlignment.top,
-        children: [
-          pw.Container(
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(width: 0.55),
-              ),
-            ),
-            child: marginalCells(
-              CdTableLine(
-                noAndHour: _t(
-                  'এন্ট্রি নং\nও সময়।',
-                  'No. and\nhour of\nentry.',
-                ),
-                placeOfEntry: _t('এন্ট্রির\nস্থান।', 'Place of\nentry.'),
-                synopsis: _t(
-                  'এন্ট্রির\nসারাংশ।',
-                  'Synopsis of\nentry.',
-                ),
-                proceedings: '',
-              ),
-              header: true,
-            ),
-          ),
-          pw.Container(
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(width: 0.55),
-              ),
-            ),
-            height: 46,
-          ),
-        ],
-      ),
-    ];
-
-    for (final line in lines) {
-      rows.add(
+    final contentRows = <pw.TableRow>[
+      for (final line in lines)
         pw.TableRow(
           verticalAlignment: pw.TableCellVerticalAlignment.top,
           children: [
-            marginalCells(line),
-            pw.Padding(
-              padding: const pw.EdgeInsets.fromLTRB(6, 4, 6, 5),
-              child: pw.Text(
-                line.proceedings,
-                style: const pw.TextStyle(fontSize: 10.2),
-                textAlign: pw.TextAlign.justify,
-              ),
+            bodyCell(line.noAndHour, center: true, fontSize: 9.2),
+            bodyCell(line.placeOfEntry, center: true, fontSize: 9.2),
+            bodyCell(line.synopsis, center: true, fontSize: 9.2),
+            bodyCell(
+              line.proceedings,
+              fontSize: 9.65,
+              horizontalPadding: 6,
+              verticalPadding: 4,
             ),
           ],
         ),
-      );
-    }
+    ];
 
     if (showSignature) {
-      rows.add(
+      contentRows.add(
         pw.TableRow(
           verticalAlignment: pw.TableCellVerticalAlignment.top,
           children: [
-            marginalCells(
-              const CdTableLine(
-                noAndHour: '',
-                placeOfEntry: '',
-                synopsis: '',
-                proceedings: '',
-              ),
-            ),
+            bodyCell('', center: true),
+            bodyCell('', center: true),
+            bodyCell('', center: true),
             pw.Padding(
-              padding: const pw.EdgeInsets.fromLTRB(6, 14, 34, 8),
+              padding: const pw.EdgeInsets.fromLTRB(6, 10, 34, 8),
               child: pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Column(
@@ -390,20 +356,20 @@ class PdfService {
                   children: [
                     pw.Text(
                       _t('পেশ করা হলো', 'Submitted'),
-                      style: const pw.TextStyle(fontSize: 10.5),
+                      style: const pw.TextStyle(fontSize: 10.2),
                     ),
-                    pw.SizedBox(height: 28),
+                    pw.SizedBox(height: 25),
                     pw.Text(
                       '(${officer.name})',
-                      style: const pw.TextStyle(fontSize: 10.5),
+                      style: const pw.TextStyle(fontSize: 10.2),
                     ),
                     pw.Text(
                       officer.rank,
-                      style: const pw.TextStyle(fontSize: 10.5),
+                      style: const pw.TextStyle(fontSize: 10.2),
                     ),
                     pw.Text(
                       _shortPsName(officer.policeStation),
-                      style: const pw.TextStyle(fontSize: 10.5),
+                      style: const pw.TextStyle(fontSize: 10.2),
                     ),
                   ],
                 ),
@@ -414,23 +380,86 @@ class PdfService {
       );
     }
 
-    return pw.Table(
-      border: const pw.TableBorder(
-        left: pw.BorderSide(width: 0.55),
-        right: pw.BorderSide(width: 0.55),
-        top: pw.BorderSide(width: 0.55),
-        bottom: pw.BorderSide(width: 0.55),
-        verticalInside: pw.BorderSide(width: 0.55),
-        horizontalInside: pw.BorderSide(width: 0.55),
-      ),
-      columnWidths: const {
-        0: pw.FlexColumnWidth(2.90),
-        1: pw.FlexColumnWidth(7.10),
-      },
-      children: rows,
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+      children: [
+        pw.Table(
+          border: const pw.TableBorder(
+            left: pw.BorderSide(width: 0.55),
+            right: pw.BorderSide(width: 0.55),
+            top: pw.BorderSide(width: 0.55),
+            bottom: pw.BorderSide(width: 0.55),
+            verticalInside: pw.BorderSide(width: 0.55),
+          ),
+          columnWidths: {
+            0: pw.FlexColumnWidth(ratios[0] + ratios[1] + ratios[2]),
+            1: pw.FlexColumnWidth(ratios[3]),
+          },
+          children: [
+            pw.TableRow(
+              children: [
+                bodyCell(
+                  _t('তদন্তের বিবরণ।', 'Particulars of Enquiry.'),
+                  bold: true,
+                  fontSize: 11.2,
+                  horizontalPadding: 8,
+                ),
+                bodyCell(''),
+              ],
+            ),
+          ],
+        ),
+        pw.Table(
+          border: const pw.TableBorder(
+            left: pw.BorderSide(width: 0.55),
+            right: pw.BorderSide(width: 0.55),
+            bottom: pw.BorderSide(width: 0.55),
+            verticalInside: pw.BorderSide(width: 0.55),
+          ),
+          columnWidths: widths,
+          children: [
+            pw.TableRow(
+              verticalAlignment: pw.TableCellVerticalAlignment.middle,
+              children: [
+                bodyCell(
+                  _t('এন্ট্রি নং\nও সময়।', 'No. and\nhour of\nentry.'),
+                  center: true,
+                  bold: true,
+                  fontSize: 9.2,
+                  verticalPadding: 5,
+                ),
+                bodyCell(
+                  _t('এন্ট্রির\nস্থান।', 'Place of\nentry.'),
+                  center: true,
+                  bold: true,
+                  fontSize: 9.2,
+                  verticalPadding: 5,
+                ),
+                bodyCell(
+                  _t('এন্ট্রির\nসারাংশ।', 'Synopsis of\nentry.'),
+                  center: true,
+                  bold: true,
+                  fontSize: 9.2,
+                  verticalPadding: 5,
+                ),
+                bodyCell('', verticalPadding: 5),
+              ],
+            ),
+          ],
+        ),
+        pw.Table(
+          border: const pw.TableBorder(
+            left: pw.BorderSide(width: 0.55),
+            right: pw.BorderSide(width: 0.55),
+            bottom: pw.BorderSide(width: 0.55),
+            verticalInside: pw.BorderSide(width: 0.55),
+          ),
+          columnWidths: widths,
+          children: contentRows,
+        ),
+      ],
     );
   }
-
 
 
   pw.Widget _wbOfficialCdSignature({required OfficerProfile officer}) {

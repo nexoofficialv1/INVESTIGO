@@ -53,3 +53,6 @@ FSL and A Form generation remains offline. Profile data is read locally and embe
 ## Configuration integrity
 
 Police Station and District are no longer supplied by hard-coded application defaults. They are taken from the locally stored Officer Profile. Settings changes remain on-device unless the officer explicitly enables/configures a backend.
+
+## RC-1 v189
+The official CD renderer continues to use Officer Profile and Case data only. No station, district, officer identity, or case year is hard-coded in production output.

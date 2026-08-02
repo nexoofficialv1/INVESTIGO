@@ -6,6 +6,10 @@ void main() {
     final total = OfficialTemplateSpec.cdColumnRatios
         .fold<double>(0, (sum, value) => sum + value);
     expect(total, closeTo(1, 0.0001));
+    expect(
+      OfficialTemplateSpec.cdColumnRatios,
+      equals(const <double>[0.09, 0.09, 0.11, 0.71]),
+    );
   });
 
   test('NCR locked columns total expected width', () {

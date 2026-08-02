@@ -97,3 +97,12 @@ Completed in source:
 Pending outside this source package:
 - GitHub Actions Flutter compile/test/APK build.
 - Real-device and physical-print calibration before Stable release.
+
+## RC-1 v189
+- [x] Form 5363 PDF continuous official table
+- [x] Form 5363 DOC continuous official table
+- [x] Official 9/9/11/71 column lock
+- [x] Roman CD number and case-derived year/date
+- [ ] Bilingual narrative conversion engine
+- [ ] Charge Sheet official specimen lock
+- [ ] IF-5 official specimen lock

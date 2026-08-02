@@ -62,3 +62,6 @@ Dead Body Challan uses reduced fixed grid heights to avoid page overflow. FSL/A 
 - Document actions show a visible SnackBar with the failing operation and exception text.
 - Profile completeness is checked before UD official document generation.
 - Release preflight rejects known invalid PDF text-decoration syntax and station-specific hard-coded source values.
+
+## RC-1 v189
+If a stored case/CD date is not ISO-parseable, the renderer preserves the entered value rather than failing export. Missing year falls back to the device year only after both case date and case number are checked.
