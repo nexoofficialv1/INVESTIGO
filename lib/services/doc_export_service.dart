@@ -118,8 +118,9 @@ $entryRows
 
   String _field(String body, String key, {String fallback = ''}) {
     final match = RegExp(
-      '^' + RegExp.escape(key) + r'\s*:\s*(.*?)(?=\n[A-Z][A-Z /&-]{2,}\s*:|\nNote:|$)',
-      multiLine: true,
+      r'(?:^|\n)' +
+          RegExp.escape(key) +
+          r'\s*:\s*(.*?)(?=\n[A-Z][A-Z /&-]{2,}\s*:|\nNote:|$)',
       dotAll: true,
       caseSensitive: false,
     ).firstMatch(body);
