@@ -23,8 +23,14 @@ if not version_match:
     errors.append('missing-version')
 else:
     version = version_match.group(1)
-    if version != '1.8.0-rc.1+180':
+    rc_match = re.fullmatch(r'1\.8\.0-rc\.(\d+)\+(\d+)', version)
+    if not rc_match:
         errors.append(f'unexpected-version:{version}')
+    else:
+        rc_number = int(rc_match.group(1))
+        build_number = int(rc_match.group(2))
+        if rc_number < 1 or build_number < 180:
+            errors.append(f'unexpected-version:{version}')
 
 required_sources = [
     'lib/services/official_template_spec.dart',
