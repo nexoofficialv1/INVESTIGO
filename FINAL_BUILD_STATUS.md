@@ -27,3 +27,22 @@ Version: `1.8.0-rc.1+180`
 - Record and fix all blocking defects
 
 This package is an RC source candidate, not a production-certified stable release.
+
+## RC-1 complete source checkpoint — 1.8.0-rc.5+186
+
+Completed in source:
+- CD content-height rows and compact official grid.
+- Settings hub and officer profile routing.
+- Dashboard Settings navigation and INVESTIGO branding.
+- Profile-bound PS/District for UD and NCR.
+- Dead Body Challan common preview/PDF/DOC path.
+- FSL Form 5203 and A Form source/export support.
+
+Local checks completed in the packaging environment:
+- Release validator: PASS
+- Preflight validator: PASS
+- Dart delimiter/string structural scan: PASS
+- Local relative-import check: PASS
+- ZIP integrity: pending packaging step
+
+Flutter analyze/test/APK compile must run in GitHub Actions because Flutter SDK is not installed in the packaging environment.

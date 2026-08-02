@@ -46,3 +46,13 @@ Offline drafting may suggest narrative text only. It must not fabricate charge-s
 
 ## v1.7.6
 No narration prompt change. Feature-freeze metadata must never alter officer narration or generated document content.
+
+## Profile binding rule
+Generated drafts must never invent a Police Station or District. Use the saved OfficerProfile and block export when PS/District are missing.
+
+## v185
+No prompt change. Official FSL/A Form exports do not use generative AI.
+
+## RC-1 assistant constraint
+
+Offline assistant output must never invent Police Station or District. Document identity fields come exclusively from the current Officer Profile. Generated CD text may propose investigation actions, but official row metadata remains officer-editable before approval.

@@ -73,7 +73,12 @@ class _NcrScreenState extends State<NcrScreen> {
     setState(() => _saved = list);
   }
 
-  NcrReport _collect() => _report.copyWith({for (final f in _fields) f.key: _c[f.key]!.text.trim()});
+  NcrReport _collect() => _report.copyWith({
+        for (final f in _fields) f.key: _c[f.key]!.text.trim(),
+        'policeStation': widget.profile.policeStation,
+        'district': widget.profile.district,
+        'submittedBy': '${widget.profile.rank} ${widget.profile.name}',
+      });
 
   Future<void> _save() async {
     _report = _collect();
@@ -114,7 +119,15 @@ class _NcrScreenState extends State<NcrScreen> {
       );
       final map = _report.toJson();
       for (final f in _fields) {
-        _c[f.key]!.text = (map[f.key] ?? '').toString();
+        if (f.key == 'policeStation') {
+          _c[f.key]!.text = widget.profile.policeStation;
+        } else if (f.key == 'district') {
+          _c[f.key]!.text = widget.profile.district;
+        } else if (f.key == 'submittedBy') {
+          _c[f.key]!.text = '${widget.profile.rank} ${widget.profile.name}';
+        } else {
+          _c[f.key]!.text = (map[f.key] ?? '').toString();
+        }
       }
     });
   }
@@ -124,7 +137,15 @@ class _NcrScreenState extends State<NcrScreen> {
       _report = report;
       final map = report.toJson();
       for (final f in _fields) {
-        _c[f.key]!.text = (map[f.key] ?? '').toString();
+        if (f.key == 'policeStation') {
+          _c[f.key]!.text = widget.profile.policeStation;
+        } else if (f.key == 'district') {
+          _c[f.key]!.text = widget.profile.district;
+        } else if (f.key == 'submittedBy') {
+          _c[f.key]!.text = '${widget.profile.rank} ${widget.profile.name}';
+        } else {
+          _c[f.key]!.text = (map[f.key] ?? '').toString();
+        }
       }
     });
   }
@@ -189,6 +210,9 @@ class _NcrScreenState extends State<NcrScreen> {
                         padding: const EdgeInsets.only(bottom: 10),
                         child: TextField(
                           controller: _c[f.key],
+                          readOnly: f.key == 'policeStation' ||
+                              f.key == 'district' ||
+                              f.key == 'submittedBy',
                           minLines: f.lines,
                           maxLines: f.lines,
                           decoration: InputDecoration(

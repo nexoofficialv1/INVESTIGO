@@ -74,3 +74,26 @@
 Status: source packaged for one GitHub push and CI APK build.
 
 Before stable release, complete the device and physical-print checklist in `RC_CHECKLIST.md`.
+
+## RC-1.3 (in progress)
+- Global Officer/Station profile binding
+- Officer-centred dashboard
+- Dead Body Challan action error handling
+- FSL Form 5203 accessibility and dynamic profile defaults
+- A Form docket index
+
+- [x] RC-1 v185: Dead Body Challan layout safety, FSL/A Form DOC parity, dashboard final-document navigation.
+
+## RC-1 completion batch — 2026-08-02
+
+Completed in source:
+- Compact/auto-height CD PDF rows.
+- Unified Settings hub.
+- Current-profile Police Station and District binding for UD and NCR.
+- Officer-centric dashboard branding/navigation.
+- Dead Body Challan preview routed through the common PDF/DOC preview screen.
+- FSL Form 5203 and A Form catalog/export retained and validated.
+
+Pending outside this source package:
+- GitHub Actions Flutter compile/test/APK build.
+- Real-device and physical-print calibration before Stable release.

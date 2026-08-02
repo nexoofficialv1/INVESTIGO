@@ -350,23 +350,13 @@ class PdfService {
     ];
 
     for (final line in lines) {
-      final estimatedHeight = math
-          .max(
-            42.0,
-            18.0 + (line.proceedings.length / 72.0).ceil() * 12.0,
-          )
-          .toDouble();
       rows.add(
         pw.TableRow(
           verticalAlignment: pw.TableCellVerticalAlignment.top,
           children: [
-            pw.Container(
-              constraints: pw.BoxConstraints(minHeight: estimatedHeight),
-              child: marginalCells(line),
-            ),
-            pw.Container(
-              constraints: pw.BoxConstraints(minHeight: estimatedHeight),
-              padding: const pw.EdgeInsets.fromLTRB(6, 4, 6, 6),
+            marginalCells(line),
+            pw.Padding(
+              padding: const pw.EdgeInsets.fromLTRB(6, 4, 6, 5),
               child: pw.Text(
                 line.proceedings,
                 style: const pw.TextStyle(fontSize: 10.2),
@@ -431,6 +421,7 @@ class PdfService {
         top: pw.BorderSide(width: 0.55),
         bottom: pw.BorderSide(width: 0.55),
         verticalInside: pw.BorderSide(width: 0.55),
+        horizontalInside: pw.BorderSide(width: 0.55),
       ),
       columnWidths: const {
         0: pw.FlexColumnWidth(2.90),
@@ -549,9 +540,14 @@ class PdfService {
     final isForwarding = form.templateId == 'forwarding';
     final isCdrCaf = form.templateId == 'cdr_caf';
     final isFsl = form.templateId == 'fsl';
+    final isAForm = form.templateId == 'a_form';
 
     if (isFsl) {
       _addFslPackageOfficialPages(doc, officer, caseFile, body);
+      return doc.save();
+    }
+    if (isAForm) {
+      _addAFormPage(doc, officer, caseFile, body);
       return doc.save();
     }
     if (isCdrCaf) {
@@ -636,6 +632,80 @@ class PdfService {
     );
   }
 
+  void _addAFormPage(pw.Document doc, OfficerProfile officer, CaseFile caseFile, String body) {
+    final court = _extractFormField(
+      body,
+      'COURT NAME',
+      fallback: officer.courtName.trim().isEmpty ? 'Ld. Court, ${officer.district}' : officer.courtName,
+    );
+    final through = _extractFormField(body, 'THROUGH', fallback: 'Bench Clerk');
+    final reference = _extractFormField(
+      body,
+      'REFERENCE',
+      fallback: '${officer.policeStation} P.S. Case No. ${caseFile.psCaseNo} dated ${caseFile.caseDate} u/s ${caseFile.sections}',
+    );
+    final totalPages = _extractFormField(body, 'TOTAL DOCKET PAGES', fallback: '__________');
+    final chargeSheetNo = _extractFormField(body, 'CHARGE SHEET NO', fallback: '__________');
+    final indexRaw = _extractFormField(body, 'DOCUMENT INDEX', fallback: '1 | F.I.R |');
+    final rows = _parsePipeRows(indexRaw, 3, fallback: ['1', 'F.I.R', '']);
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(38, 28, 38, 30),
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Center(
+              child: pw.Text(
+                '“A” FORM',
+                style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 18),
+            pw.Center(child: pw.Text('In the Court of $court', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
+            pw.SizedBox(height: 8),
+            pw.Text('(Through $through)', style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 14),
+            pw.Text('Ref: $reference', style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 30),
+            pw.Text('Sir,', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 6),
+            pw.Paragraph(
+              text: 'I am sending herewith the original complete case docket along with charge sheet of the above noted case containing page no. 01 to $totalPages as the case has ended in CS vide ${officer.policeStation} Charge Sheet No. $chargeSheetNo.',
+              style: const pw.TextStyle(fontSize: 11),
+              textAlign: pw.TextAlign.justify,
+            ),
+            pw.Paragraph(
+              text: 'With due respect I beg to submit that copies of the following documents may kindly be supplied to the accused persons before the commencement of trial of the case.',
+              style: const pw.TextStyle(fontSize: 11),
+              textAlign: pw.TextAlign.justify,
+            ),
+            pw.SizedBox(height: 8),
+            pw.Table(
+              border: pw.TableBorder.all(width: .65),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(.8),
+                1: pw.FlexColumnWidth(3.4),
+                2: pw.FlexColumnWidth(1.25),
+              },
+              children: [
+                _tableRow(['Sl No', 'Document', 'Page No.'], header: true, fontSize: 10),
+                ...rows.map((row) => _tableRow(row, fontSize: 10.2)),
+              ],
+            ),
+            pw.SizedBox(height: 22),
+            _submittedOfficerBlock(officer),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _addCdrCafOfficialPages(pw.Document doc, OfficerProfile officer, CaseFile caseFile, String body) {
     final ref = '${_shortPsName(officer.policeStation)} Case No-${caseFile.psCaseNo} Dated-${caseFile.caseDate}, U/S-${caseFile.sections}';
     final gist = _extractFormField(body, 'GIST', fallback: caseFile.firGist.isEmpty ? '____________________________________________________________' : caseFile.firGist);
@@ -675,7 +745,7 @@ class PdfService {
       pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.fromLTRB(32, 24, 32, 24),
       build: (_) => [
-        pw.Text('To: SP/${officer.district} =w= O/C SOG Cell, ${officer.district} =w= SDPO Kalna', style: const pw.TextStyle(fontSize: 10.5)),
+        pw.Text('To: SP/${officer.district} =w= O/C SOG Cell, ${officer.district} =w= ${officer.defaultSdpoOffice.trim().isEmpty ? 'SDPO / Supervisory Office' : officer.defaultSdpoOffice}', style: const pw.TextStyle(fontSize: 10.5)),
         pw.SizedBox(height: 12),
         pw.Text('From: I/C ${_shortPsName(officer.policeStation)}', style: const pw.TextStyle(fontSize: 10.5)),
         pw.SizedBox(height: 18),
@@ -692,7 +762,7 @@ class PdfService {
     final exhibitsRaw = _extractFormField(body, 'EXHIBITS', fallback: _extractFormField(body, 'EXHIBIT DESCRIPTION', fallback: 'A | One sealed packet/jar/container containing said to be ________________________________. | Seized on ____________ at ________________________________ by ${officer.rank} ${officer.name}. | Ld. C.J.M / Magistrate, ${officer.district} | May be confiscated to the State after examination / may be returned after examination'));
     final exam = _extractFormField(body, 'NATURE OF EXAMINATION', fallback: 'Whether relevant material/poison/blood/semen/chemical/biological trace could be detected in Exhibit Mark “A” or not.');
     final accusedRaw = _extractFormField(body, 'PERSONS IN CUSTODY', fallback: _extractFormField(body, 'PERSON IN CUSTODY', fallback: '${caseFile.accusedName} | Occupation | Age | Sex | Date & time of arrest | J/C / P/C / Bail / At large | Ld. Court'));
-    final fslOffice = _extractFormField(body, 'FSL OFFICE', fallback: 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\nShankarpur, Durgapur\nPaschim Bardhaman, 713212');
+    final fslOffice = _extractFormField(body, 'FSL OFFICE', fallback: officer.defaultFslOffice.trim().isEmpty ? 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\n____________________________' : officer.defaultFslOffice);
     final court = _extractFormField(body, 'COURT', fallback: 'Ld. C.J.M / Magistrate, ${officer.district}');
     final contact = _extractFormField(body, 'IO / PS CONTACT DETAILS', fallback: 'I.O. Name:- ${officer.name}\nDesignation:- ${officer.rank}\nMobile No. of I.O.:- ${officer.mobile}\nName of the PS:- ${officer.policeStation}\nDistrict:- ${officer.district}');
     final exhibits = _parsePipeRows(exhibitsRaw, 5, fallback: ['A', 'One sealed packet/jar/container containing said to be ________________________________.', 'Seized on ____________ at ________________________________ by ${officer.rank} ${officer.name}.', court, 'May be confiscated to the State after examination / may be returned after examination']);
@@ -817,11 +887,23 @@ class PdfService {
   }
 
   String _extractFormField(String body, String key, {String fallback = ''}) {
-    final pattern = RegExp('^' + RegExp.escape(key) + r'\s*:\s*(.*)$', multiLine: true, caseSensitive: false);
-    final match = pattern.firstMatch(body);
-    if (match == null) return fallback;
-    final value = (match.group(1) ?? '').trim();
-    return value.isEmpty ? fallback : value;
+    final lines = body.replaceAll('\r', '').split('\n');
+    final prefix = RegExp('^' + RegExp.escape(key) + r'\s*:\s*(.*)$', caseSensitive: false);
+    final nextField = RegExp(r'^[A-Z][A-Z0-9 /&()._\-]{2,}\s*:\s*');
+    for (var index = 0; index < lines.length; index++) {
+      final match = prefix.firstMatch(lines[index].trimRight());
+      if (match == null) continue;
+      final values = <String>[(match.group(1) ?? '').trim()];
+      for (var next = index + 1; next < lines.length; next++) {
+        final line = lines[next];
+        final trimmed = line.trim();
+        if (trimmed.startsWith('Note:') || nextField.hasMatch(trimmed)) break;
+        values.add(line.trimRight());
+      }
+      final value = values.join('\n').trim();
+      return value.isEmpty ? fallback : value;
+    }
+    return fallback;
   }
 
   pw.Widget _twoColRow(String left, String right, {double leftFlex = 1.0, double rightFlex = 1.25, double fontSize = 10.5}) {
@@ -858,7 +940,7 @@ class PdfService {
     final ioPhone = _extractFormField(body, 'IO PHONE', fallback: officer.mobile);
 
     return [
-      pw.Text('To: SP/${officer.district} =w= O/C SOG Cell, ${officer.district} =w= SDPO Kalna', style: const pw.TextStyle(fontSize: 11)),
+      pw.Text('To: SP/${officer.district} =w= O/C SOG Cell, ${officer.district} =w= ${officer.defaultSdpoOffice.trim().isEmpty ? 'SDPO / Supervisory Office' : officer.defaultSdpoOffice}', style: const pw.TextStyle(fontSize: 11)),
       pw.SizedBox(height: 14),
       pw.Text('From: I/C ${_shortPsName(officer.policeStation)}', style: const pw.TextStyle(fontSize: 11)),
       pw.SizedBox(height: 20),
@@ -907,7 +989,7 @@ class PdfService {
     final found = _extractFormField(body, 'HOW FOUND / SEIZED', fallback: 'Seized on ____________ at ________________________________ by ${officer.rank} ${officer.name}.');
     final exam = _extractFormField(body, 'NATURE OF EXAMINATION', fallback: 'Whether relevant material/poison/blood/semen/chemical/biological trace could be detected in Exhibit Mark "A" or not.');
     final accused = _extractFormField(body, 'PERSON IN CUSTODY', fallback: '____________________________');
-    final fslOffice = _extractFormField(body, 'FSL OFFICE', fallback: 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\nShankarpur, Durgapur\nPaschim Bardhaman, 713212');
+    final fslOffice = _extractFormField(body, 'FSL OFFICE', fallback: officer.defaultFslOffice.trim().isEmpty ? 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\n____________________________' : officer.defaultFslOffice);
     final court = _extractFormField(body, 'COURT', fallback: 'Ld. C.J.M / Magistrate, ${officer.district}');
 
     final widgets = <pw.Widget>[];
@@ -1007,7 +1089,7 @@ class PdfService {
   List<pw.Widget> _forwardingPdf(OfficerProfile officer, CaseFile caseFile, String body) => [
         pw.Text('In the court of ${officer.courtName}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 20),
-        pw.Center(child: pw.Text('Through GRO Kalna Court', style: const pw.TextStyle(fontSize: 11))),
+        pw.Center(child: pw.Text('Through ${officer.courtName.trim().isEmpty ? 'Ld. Court' : officer.courtName}', style: const pw.TextStyle(fontSize: 11))),
         pw.SizedBox(height: 22),
         pw.Text(body, style: const pw.TextStyle(fontSize: 11.3), textAlign: pw.TextAlign.justify),
         pw.SizedBox(height: 24),
@@ -1498,9 +1580,9 @@ extension UdSupportingReportsPdfService on PdfService {
         ? '${ud.deceasedName} নামীয় মৃত ব্যক্তির মৃতদেহটি, ${ud.deceasedAddress}, ময়নাতদন্তের মাধ্যমে মৃত্যুর প্রকৃত কারণ নির্ণয়ের জন্য ${ud.placeFound.isEmpty ? 'পুলিশ মর্গে' : ud.placeFound} প্রেরণ করা হলো। মৃতদেহটি $identifyingOfficer দ্বারা সনাক্ত করা হয়েছে এবং সংশ্লিষ্ট কাগজপত্রসহ পাঠানো হলো।'
         : 'Forwarded the dead body of the deceased namely ${ud.deceasedName}, (${ud.religionRaceCommunity.isEmpty ? 'Religion' : ud.religionRaceCommunity}, ${ud.deceasedSex}, Age- ${ud.deceasedAge}), of ${ud.deceasedAddress} to ${ud.placeFound.isEmpty ? 'the Police Morgue' : ud.placeFound} with all connected papers for holding Post Mortem Examination over the dead body of the deceased to ascertain the actual cause of death.';
 
-    const headerHeight = 84.0;
-    const bodyHeight = 332.0;
-    const rightTopHeight = 178.0;
+    const headerHeight = 72.0;
+    const bodyHeight = 300.0;
+    const rightTopHeight = 154.0;
     final leftWidths = <int, pw.TableColumnWidth>{
       0: const pw.FlexColumnWidth(1.18), 1: const pw.FlexColumnWidth(.78), 2: const pw.FlexColumnWidth(1.05), 3: const pw.FlexColumnWidth(.98), 4: const pw.FlexColumnWidth(1.35),
     };
@@ -1798,7 +1880,8 @@ extension NcrPdfExport on PdfService {
           0: pw.FlexColumnWidth(ratios[0]), 1: pw.FlexColumnWidth(ratios[1]),
           2: pw.FlexColumnWidth(ratios[2]), 3: pw.FlexColumnWidth(ratios[3]),
         }, children: [pw.TableRow(children: [
-          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('I\n${draft.entryTime}', style: const pw.TextStyle(fontSize: 8.5))),
+          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('I
+${draft.entryTime}', style: const pw.TextStyle(fontSize: 8.5))),
           pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(draft.entryPlace, style: const pw.TextStyle(fontSize: 8.5))),
           pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(draft.synopsis, style: const pw.TextStyle(fontSize: 8.5))),
           pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [

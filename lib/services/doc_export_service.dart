@@ -112,11 +112,130 @@ $entryRows
     return _docBytes(_page('Statement', html));
   }
 
+  String _field(String body, String key, {String fallback = ''}) {
+    final match = RegExp(
+      '^' + RegExp.escape(key) + r'\s*:\s*(.*?)(?=\n[A-Z][A-Z /&-]{2,}\s*:|\nNote:|$)',
+      multiLine: true,
+      dotAll: true,
+      caseSensitive: false,
+    ).firstMatch(body);
+    final value = (match?.group(1) ?? '').trim();
+    return value.isEmpty ? fallback : value;
+  }
+
+  List<List<String>> _pipeRows(String raw, int columns, List<String> fallback) {
+    final rows = raw
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .map((line) {
+      final parts = line.split('|').map((part) => part.trim()).toList();
+      while (parts.length < columns) {
+        parts.add('');
+      }
+      return parts.take(columns).toList();
+    }).toList();
+    return rows.isEmpty ? [fallback] : rows;
+  }
+
+  Uint8List _buildFslPackageDoc(
+    OfficerProfile officer,
+    CaseFile caseFile,
+    FormNotice form,
+  ) {
+    final body = form.body;
+    final nature = _field(
+      body,
+      'NATURE OF CRIME',
+      fallback: caseFile.firGist,
+    );
+    final examination = _field(body, 'NATURE OF EXAMINATION');
+    final fslOffice = _field(
+      body,
+      'FSL OFFICE',
+      fallback: officer.defaultFslOffice,
+    );
+    final court = _field(
+      body,
+      'COURT',
+      fallback: officer.courtName,
+    );
+    final exhibits = _pipeRows(
+      _field(body, 'EXHIBITS', fallback: _field(body, 'EXHIBIT DESCRIPTION')),
+      5,
+      ['A', '____________________________', '____________________________', court, '________________'],
+    );
+    final persons = _pipeRows(
+      _field(body, 'PERSONS IN CUSTODY', fallback: _field(body, 'PERSON IN CUSTODY')),
+      7,
+      [caseFile.accusedName, '', '', '', '', '', court],
+    );
+    final exhibitRows = exhibits.map((row) => '<tr>${row.map((cell) => '<td>${_e(cell)}</td>').join()}</tr>').join();
+    final custodyRows = persons.map((row) => '<tr>${row.map((cell) => '<td>${_e(cell)}</td>').join()}</tr>').join();
+    final ref = '${officer.policeStation} Case No. ${caseFile.psCaseNo} dated ${caseFile.caseDate} u/s ${caseFile.sections}';
+    final html = '''
+<html><head><meta charset="utf-8"><style>
+@page{size:A4;margin:14mm 12mm} body{font-family:"Times New Roman",serif;font-size:10.5pt} table{width:100%;border-collapse:collapse;table-layout:fixed} td,th{border:1px solid #000;padding:4px;vertical-align:top}.center{text-align:center}.right{text-align:right}.bold{font-weight:bold}.justify{text-align:justify}.page-break{page-break-before:always}.small{font-size:9pt}
+</style></head><body>
+<div>West Bengal Form No- 5203</div>
+<div class="center bold">WEST BENGAL POLICE</div><br/>
+<p>Case No:- ${_e(caseFile.psCaseNo)} &nbsp; Date ${_e(caseFile.caseDate)}<br/>Police Station:- ${_e(officer.policeStation)}<br/>Section of Law:- ${_e(caseFile.sections)} &nbsp; District- ${_e(officer.district)}</p>
+<div class="center bold">I. NATURE OF CRIME</div><p class="justify">${_e(nature)}</p>
+<div class="right">Submitted<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(officer.policeStation)}, ${_e(officer.district)}</div>
+<div class="page-break"></div>
+<div class="center bold">II. LIST OF EXHIBITS SENT FOR EXAMINATION</div><br/>
+<table><tr><th>Label No</th><th>Description of the exhibit</th><th>How and when found and by whom</th><th>Ownership of exhibit</th><th>Remarks</th></tr>$exhibitRows</table>
+<br/><div class="center bold">III. NATURE OF EXAMINATION REQUIRED</div><p class="justify">${_e(examination)}</p>
+<div class="page-break"></div>
+<div class="center bold">IV. PARTICULARS OF PERSONS IN CUSTODY</div><br/>
+<table><tr><th>Full name</th><th>Occupation</th><th>Age</th><th>Sex</th><th>Date & time of arrest</th><th>Bail/Custody</th><th>Court</th></tr>$custodyRows</table>
+<div class="right" style="margin-top:30px">Signature and Rank of the I.O.<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}</div>
+<p>Forwarded to:<br/>${_e(fslOffice)}</p><p>Through: ${_e(court)}</p>
+<div class="page-break"></div>
+<div class="center bold">EXHIBIT CHALLAN</div><p>Ref: ${_e(ref)}</p><p class="justify">I am sending herewith the following exhibit(s) for examination and opinion for the interest of investigation of the case.</p>
+<table><tr><th>Mark</th><th>Description</th></tr>${exhibits.map((row) => '<tr><td>${_e(row[0])}</td><td>${_e(row[1])}</td></tr>').join()}</table>
+<div class="right" style="margin-top:30px">Yours faithfully<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(officer.policeStation)}, ${_e(officer.district)}<br/>Mobile: ${_e(officer.mobile)}</div>
+<div class="page-break"></div>
+${exhibits.map((row) => '<div class="center bold">LABEL</div><p>To<br/>${_e(fslOffice)}<br/>Through ${_e(court)}</p><p>Ref: ${_e(ref)}</p><p>Description of Article:<br/>Exhibit Mark “${_e(row[0])}” — ${_e(row[1])}</p><div class="right">Labeled & prepared by me<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(officer.policeStation)}</div><div class="page-break"></div>').join()}
+</body></html>
+''';
+    return _docBytes(html);
+  }
+
+  Uint8List _buildAFormDoc(
+    OfficerProfile officer,
+    CaseFile caseFile,
+    FormNotice form,
+  ) {
+    final body = form.body;
+    final court = _field(body, 'COURT NAME', fallback: officer.courtName);
+    final through = _field(body, 'THROUGH', fallback: 'Bench Clerk');
+    final totalPages = _field(body, 'TOTAL DOCKET PAGES', fallback: '__________');
+    final csNo = _field(body, 'CHARGE SHEET NO', fallback: '__________');
+    final indexRaw = _field(body, 'DOCUMENT INDEX');
+    final rows = _pipeRows(indexRaw, 3, ['1', 'F.I.R.', '']);
+    final tableRows = rows.map((row) => '<tr><td>${_e(row[0])}</td><td>${_e(row[1])}</td><td>${_e(row[2])}</td></tr>').join();
+    return _docBytes('''<html><head><meta charset="utf-8"><style>@page{size:A4;margin:14mm}body{font-family:"Times New Roman",serif;font-size:11pt}table{width:100%;border-collapse:collapse}td,th{border:1px solid #000;padding:5px}.center{text-align:center}.right{text-align:right}.bold{font-weight:bold}</style></head><body>
+<div class="center bold">A FORM</div><br/>
+<p>In the Court of: ${_e(court)}<br/>Through: ${_e(through)}</p>
+<p>Ref: ${_e(officer.policeStation)} Case No. ${_e(caseFile.psCaseNo)} dated ${_e(caseFile.caseDate)} u/s ${_e(caseFile.sections)}</p>
+<p>Charge Sheet No.: ${_e(csNo)} &nbsp;&nbsp; Total Docket Pages: ${_e(totalPages)}</p>
+<table><tr><th>Sl. No.</th><th>Description of Document</th><th>Page No.</th></tr>$tableRows</table>
+<div class="right" style="margin-top:36px">Submitted<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}<br/>${_e(officer.policeStation)}, ${_e(officer.district)}</div>
+</body></html>''');
+  }
+
   Future<Uint8List> buildFormNoticeDoc({
     required OfficerProfile officer,
     required CaseFile caseFile,
     required FormNotice form,
   }) async {
+    if (form.templateId == 'fsl') {
+      return _buildFslPackageDoc(officer, caseFile, form);
+    }
+    if (form.templateId == 'a_form') {
+      return _buildAFormDoc(officer, caseFile, form);
+    }
     final html = '''
 <div class="center bold">${_e(form.title)}</div><br/>
 <p class="small">Ref: ${_e(officer.policeStation)} Case No. ${_e(caseFile.psCaseNo)} dated ${_e(caseFile.caseDate)} u/s ${_e(caseFile.sections)}</p>

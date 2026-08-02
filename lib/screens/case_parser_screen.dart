@@ -156,21 +156,23 @@ class _CaseParserScreenState extends State<CaseParserScreen> {
   }
 
   void _fillDemo() {
-    rawText.text = '''Ref: Kalna P.S. Case No- 558/26 Dated 08.07.26 U/S- 126(2)/115(2)/76/3(5) BNS.
+    final ps = widget.profile.policeStation.trim().isEmpty ? 'Sample Police Station' : widget.profile.policeStation;
+    final district = widget.profile.district.trim().isEmpty ? 'Sample District' : widget.profile.district;
+    rawText.text = '''Ref: $ps Case No- 001/26 Dated 01.01.26 U/S- 115(2)/3(5) BNS.
 
-P.O: Dharmadanga PS Kalna Dist Purba Bardhaman (Hatkalna GP).
+P.O: Sample locality, P.S. $ps, Dist. $district.
 
-D.O: On 07.07.2026 at about 13:30 Hrs.
+D.O: On 01.01.2026 at about 13:30 Hrs.
 
-D.R:  08.07.2026 at 13.25 hrs.
+D.R: 01.01.2026 at 14.25 hrs.
 
-Complt: Aparna Sarkar Kharati W/o Asim Kharati of Dharmadanga PS Kalna Dist Purba Bardhaman (Mob- 81011111657).
+Complt: Sample Complainant of Sample locality, P.S. $ps, Dist. $district.
 
-FIR Named Accd-01 & others(1. Sargam Biswas S/o Lt. Samir Biswas of Dharmadanga PS Kalna Dist Purba Bardhaman and others)
+FIR Named Accd-01 & others: Sample Accused of Sample locality.
 
-I.O: ASI Sukanta Chakraborty (7001786060)
+I.O: ${widget.profile.rank} ${widget.profile.name}
 
-Gist: - On 08.07.2026 at 13:25 hrs, a written complaint was received from one Aparna Sarkar Kharati, W/o Asim Kharati of Dharmadanga, P.S. Kalna, Dist. Purba Bardhaman, to the effect that on 07.07.2026 at about 13:30 hrs, some young boys created a disturbance over an issue. Subsequently, at about 22:10 hrs, one Sargam Biswas, along with others, assaulted the complainant and her husband and also tore the wearing apparel of the complainant. On the basis of such complaint initiated this instant case. Investigation is proceeding.
+Gist: On the basis of a written complaint, the above noted case was started and investigation is proceeding.
 
 Arrest: NIL.''';
     _parse();

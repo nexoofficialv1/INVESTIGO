@@ -25,6 +25,8 @@ import 'backup_screen.dart';
 import 'license_screen.dart';
 import 'ncr_screen.dart';
 import 'release_center_screen.dart';
+import 'final_case_documents_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final OfficerProfile profile;
@@ -39,6 +41,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late OfficerProfile _profile;
   List<CaseFile> _cases = [];
   int _tabIndex = 0;
+  int _totalCds = 0;
+  int _pendingActions = 0;
+  int _udCount = 0;
+  int _ncrCount = 0;
 
   @override
   void initState() {
@@ -49,8 +55,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _load() async {
     final cases = await _store.loadCases();
+    var totalCds = 0;
+    var pendingActions = 0;
+    for (final file in cases) {
+      totalCds += (await _store.loadCds(file.id)).length;
+      pendingActions += (await _store.loadPendingCdActions(file.id)).length;
+    }
+    final udCases = await _store.loadUdCases();
+    final ncrReports = await _store.loadNcrReports();
     if (!mounted) return;
-    setState(() => _cases = cases);
+    setState(() {
+      _cases = cases;
+      _totalCds = totalCds;
+      _pendingActions = pendingActions;
+      _udCount = udCases.length;
+      _ncrCount = ncrReports.length;
+    });
   }
 
   Future<void> _newCase() async {
@@ -104,6 +124,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
     await Navigator.push(context, MaterialPageRoute(builder: (_) => CaseDetailScreen(profile: _profile, caseFile: file)));
+    await _load();
+  }
+
+
+  Future<void> _openFinalCaseDocuments() async {
+    final file = _latestCase;
+    if (file == null) {
+      _needCaseMessage();
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FinalCaseDocumentsScreen(
+          profile: _profile,
+          caseFile: file,
+        ),
+      ),
+    );
     await _load();
   }
 
@@ -212,6 +251,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _openSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SettingsScreen(
+          profile: _profile,
+          onProfileUpdated: (updated) {
+            if (!mounted) return;
+            setState(() => _profile = updated);
+          },
+        ),
+      ),
+    );
+    await _load();
+  }
+
   Future<void> _openSopCompliance() async {
     final file = _latestCase;
     if (file == null) {
@@ -270,6 +325,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: EdgeInsets.zero,
             children: [
               _topHeader(),
+              const SizedBox(height: 14),
+              _workSummary(),
+              const SizedBox(height: 18),
+              _quickActions(),
               const SizedBox(height: 18),
               _gridMenu(),
               const SizedBox(height: 18),
@@ -303,13 +362,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           setState(() => _tabIndex = i);
           if (i == 1) _openLatestCase();
           if (i == 2) _comingSoon('Tasks / Pending CD Entries');
-          if (i == 3) _editProfile();
+          if (i == 3) _openSettings();
         },
         items: [
           BottomNavigationBarItem(icon: const Icon(Icons.home_rounded), label: L10n.t('হোম', 'HOME')),
           BottomNavigationBarItem(icon: const Icon(Icons.folder_copy_rounded), label: L10n.t('মামলা', 'CASES')),
           BottomNavigationBarItem(icon: const Icon(Icons.notifications_rounded), label: L10n.t('কাজ', 'TASKS')),
-          BottomNavigationBarItem(icon: const Icon(Icons.person_rounded), label: L10n.t('প্রোফাইল', 'PROFILE')),
+          BottomNavigationBarItem(icon: const Icon(Icons.settings_rounded), label: L10n.t('সেটিংস', 'SETTINGS')),
         ],
       ),
     );
@@ -317,19 +376,119 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _topHeader() {
     return Container(
-      height: 104,
+      height: 118,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFF003E34), Color(0xFF00745E)]),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Investigation & Process', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 6),
-          Text('${_profile.rank} ${_profile.name} • ${_profile.policeStation}', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
+        gradient: LinearGradient(
+          colors: [Color(0xFF003E34), Color(0xFF00745E)],
+        ),
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
         ],
       ),
+      child: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'INVESTIGO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${_profile.rank} ${_profile.name}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${_profile.policeStation} • ${_profile.district}',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: IconButton(
+                tooltip: L10n.t('সেটিংস', 'Settings'),
+                onPressed: _openSettings,
+                color: Colors.white,
+                icon: const Icon(Icons.settings_rounded),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _workSummary() {
+    final items = <MapEntry<String, String>>[
+      MapEntry(L10n.t('মামলা', 'Cases'), '${_cases.length}'),
+      MapEntry(L10n.t('CD', 'CDs'), '$_totalCds'),
+      MapEntry(L10n.t('Pending', 'Pending'), '$_pendingActions'),
+      MapEntry(L10n.t('UD', 'UD'), '$_udCount'),
+      MapEntry(L10n.t('NCR', 'NCR'), '$_ncrCount'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(L10n.t('আজকের কাজ', "Today's Work"), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 86,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, index) => Container(
+                width: 112,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(items[index].value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
+                  const Spacer(),
+                  Text(items[index].key, style: const TextStyle(fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActions() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(L10n.t('দ্রুত কাজ', 'Quick Actions'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          FilledButton.icon(onPressed: _newCase, icon: const Icon(Icons.add), label: Text(L10n.t('নতুন মামলা', 'New Case'))),
+          OutlinedButton.icon(onPressed: _openCdWriter, icon: const Icon(Icons.menu_book), label: const Text('CD')),
+          OutlinedButton.icon(onPressed: _openUdCase, icon: const Icon(Icons.assignment), label: const Text('UD')),
+          OutlinedButton.icon(onPressed: _openNcr, icon: const Icon(Icons.table_chart), label: const Text('NCR')),
+          OutlinedButton.icon(onPressed: _openForms, icon: const Icon(Icons.science), label: const Text('FSL / A Form')),
+        ]),
+      ]),
     );
   }
 
@@ -345,15 +504,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _Menu('Report', 'SP/SDPO/SDO', Icons.summarize_rounded, const Color(0xFFD68A00), _openReport),
       _Menu('Compliance', 'legal checklist', Icons.event_available_rounded, const Color(0xFF1B5E4B), _openCompliance),
       _Menu('SOP', 'DGP directions', Icons.policy_rounded, const Color(0xFF004D40), _openSopCompliance),
-      _Menu('IF5 / CS', 'from final CD', Icons.fact_check_rounded, AppTheme.coral, () => _comingSoon('IF5 / CS')),
+      _Menu('IF5 / CS', 'from final CD', Icons.fact_check_rounded, AppTheme.coral, _openFinalCaseDocuments),
       _Menu('Evidence', 'evidence manager', Icons.inventory_2_rounded, const Color(0xFF795000), _openEvidence),
       _Menu('UD Case', 'inquest/final report', Icons.assignment_rounded, const Color(0xFF5D4037), _openUdCase),
       _Menu(L10n.t('NCR', 'NCR'), L10n.t('প্রসিকিউশন রিপোর্ট', 'prosecution report'), Icons.table_chart_rounded, const Color(0xFF7B1FA2), _openNcr),
-      _Menu('Backup', 'local/server sync', Icons.backup_rounded, const Color(0xFF455A64), _openBackup),
-      _Menu('Backend', 'server setup', Icons.dns_rounded, const Color(0xFF263238), _openBackendSettings),
-      _Menu('License', 'fees/activation', Icons.workspace_premium_rounded, const Color(0xFF8D6E00), _openLicense),
-      _Menu('RC-1 Center', 'feature freeze', Icons.verified_user_rounded, const Color(0xFF2E7D32), _openReleaseCenter),
-      _Menu('PDF Export', 'preview first', Icons.picture_as_pdf_rounded, const Color(0xFF42A5F5), () => _comingSoon('PDF Export')),
+      _Menu('Settings', 'profile/backup/license/backend', Icons.settings_rounded, const Color(0xFF37474F), _openSettings),
+      _Menu('PDF Export', 'preview first', Icons.picture_as_pdf_rounded, const Color(0xFF42A5F5), _openFinalCaseDocuments),
       _Menu('Final CD', 'investigation summary', Icons.verified_rounded, const Color(0xFFC2188B), _openCdWriter),
       _Menu('Sketch Map', 'builder/index', Icons.map_rounded, const Color(0xFF006B57), _openSketchMap),
     ];

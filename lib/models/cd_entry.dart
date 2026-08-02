@@ -59,7 +59,7 @@ class CdEntry {
     required String caseId,
     required int cdNumber,
     required String body,
-    String placeOfEntry = 'Kalna PS',
+    String placeOfEntry = '',
     List<CdTableLine>? tableLines,
   }) {
     final now = DateTime.now();

@@ -67,3 +67,13 @@ Each record stores editable content, independent approval state and `updatedAt`.
 
 ## v1.7.6
 No database schema change. RC-1 feature scope is static application metadata and is not stored with case, UD or NCR records.
+
+## Officer profile v2 fields
+Added PS address, PIN, CUG, WhatsApp, default hospital, morgue, FSL office and supervisory office. JSON loading remains backward compatible.
+
+## v185
+No schema change. FSL/A Form remain Regular Case domain documents and bind to Officer Profile plus selected Case data.
+
+## Profile binding rule
+
+Officer Profile is the authoritative source for Police Station and District during UD/NCR save and export. Loaded legacy drafts may contain older station values, but the current profile values replace them when a document is collected for saving or generation. No schema migration is required because existing JSON keys remain unchanged.

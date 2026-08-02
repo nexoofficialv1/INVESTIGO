@@ -1,22 +1,11 @@
-# Termux: one-time RC-1 GitHub push
-
-Install requirements once:
+# Termux — one-time RC-1 push
 
 ```bash
-pkg update -y
 pkg install git unzip rsync python -y
-termux-setup-storage
-```
-
-Extract and push:
-
-```bash
 cd /sdcard/Download
-unzip -o INVESTIGO_RC1_SOURCE.zip
-cd INVESTIGO_RC1_SOURCE
+unzip -o INVESTIGO_RC1_COMPLETE_SOURCE.zip
+cd INVESTIGO_RC1_COMPLETE_SOURCE
 bash PUSH_RC1_TO_GITHUB.sh
 ```
 
-Then open GitHub → `nexoofficialv1/INVESTIGO` → Actions → Build Android APK.
-
-Download `INVESTIGO-debug-apk` first for testing. Use the release artifact only after the RC checklist is completed.
+After the push, open GitHub → INVESTIGO → Actions → Build Android APK.

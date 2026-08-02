@@ -36,7 +36,7 @@ class _ReportScreenState extends State<ReportScreen> {
     super.initState();
     _caseLinked = _hasCase;
     _selected = _hasCase ? _caseTemplates.first : _generalTemplates.first;
-    _recipientController = TextEditingController(text: _selected.recipient);
+    _recipientController = TextEditingController(text: _resolvedRecipient(_selected));
     _subjectController = TextEditingController(text: _selected.subject(widget.caseFile));
     _bodyController = TextEditingController(text: _selected.body(widget.profile, widget.caseFile));
     _memoController = TextEditingController(text: '');
@@ -55,10 +55,21 @@ class _ReportScreenState extends State<ReportScreen> {
 
   List<_ReportTemplate> get _availableTemplates => _caseLinked && _hasCase ? _caseTemplates : _generalTemplates;
 
+  String _resolvedRecipient(_ReportTemplate template) {
+    final supervisoryOffice = widget.profile.defaultSdpoOffice.trim().isEmpty
+        ? widget.profile.district
+        : widget.profile.defaultSdpoOffice.trim();
+    return template.recipient
+        .replaceAll('{district}', widget.profile.district)
+        .replaceAll('{sdpoOffice}', supervisoryOffice)
+        .replaceAll('{policeStation}', widget.profile.policeStation)
+        .replaceAll('{court}', widget.profile.courtName);
+  }
+
   void _applyTemplate(_ReportTemplate template) {
     setState(() {
       _selected = template;
-      _recipientController.text = template.recipient;
+      _recipientController.text = _resolvedRecipient(template);
       _subjectController.text = template.subject(_caseLinked ? widget.caseFile : null);
       _bodyController.text = template.body(widget.profile, _caseLinked ? widget.caseFile : null);
     });
@@ -68,7 +79,7 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() {
       _caseLinked = value && _hasCase;
       _selected = _availableTemplates.first;
-      _recipientController.text = _selected.recipient;
+      _recipientController.text = _resolvedRecipient(_selected);
       _subjectController.text = _selected.subject(_caseLinked ? widget.caseFile : null);
       _bodyController.text = _selected.body(widget.profile, _caseLinked ? widget.caseFile : null);
       _referenceController.text = _caseLinked && _hasCase ? widget.caseFile!.displayTitle : '';
@@ -255,7 +266,7 @@ final List<_ReportTemplate> _caseTemplates = [
   _ReportTemplate(
     id: 'sp_progress',
     name: 'Case Report to Superintendent of Police',
-    recipient: 'The Superintendent of Police, Purba Bardhaman',
+    recipient: 'The Superintendent of Police, {district}',
     subject: (file) => 'Progress report in connection with ${file?.displayTitle ?? 'the matter'}',
     body: (officer, file) => '''Most respectfully I beg to submit that the above noted case was started on ${file?.caseDate ?? ''} u/s ${file?.sections ?? ''} on the basis of a written complaint/FIR.
 
@@ -274,7 +285,7 @@ This is submitted for favour of kind information.''',
   _ReportTemplate(
     id: 'sdpo_progress',
     name: 'Case Report to SDPO',
-    recipient: 'The Sub-Divisional Police Officer, Kalna',
+    recipient: 'The Sub-Divisional Police Officer, {sdpoOffice}',
     subject: (file) => 'Report regarding ${file?.displayTitle ?? 'the matter'}',
     body: (officer, file) => '''Most respectfully I submit that in connection with the above noted case, the undersigned has conducted investigation and the following facts have come to light.
 
@@ -295,7 +306,7 @@ Submitted for kind perusal and necessary direction.''',
   _ReportTemplate(
     id: 'sdo_report',
     name: 'Case / Enquiry Report to SDO',
-    recipient: 'The Sub-Divisional Officer, Kalna',
+    recipient: 'The Sub-Divisional Officer, {sdpoOffice}',
     subject: (file) => 'Enquiry report regarding ${file?.displayTitle ?? 'the matter'}',
     body: (officer, file) => '''Most respectfully I beg to submit that as per direction/endorsement, an enquiry/investigation was conducted in connection with the above noted matter.
 
@@ -317,7 +328,7 @@ final List<_ReportTemplate> _generalTemplates = [
   _ReportTemplate(
     id: 'general_sp',
     name: 'General Report to Superintendent of Police',
-    recipient: 'The Superintendent of Police, Purba Bardhaman',
+    recipient: 'The Superintendent of Police, {district}',
     subject: (_) => 'Submission of report',
     body: (officer, _) => '''Most respectfully I beg to submit the following report for favour of kind information.
 
@@ -334,7 +345,7 @@ This is submitted for favour of kind information and necessary direction.''',
   _ReportTemplate(
     id: 'general_sdpo',
     name: 'General Report to SDPO',
-    recipient: 'The Sub-Divisional Police Officer, Kalna',
+    recipient: 'The Sub-Divisional Police Officer, {sdpoOffice}',
     subject: (_) => 'Report for kind perusal',
     body: (officer, _) => '''Most respectfully I submit that the following facts are placed before your kind honour for perusal and necessary direction.
 
@@ -350,7 +361,7 @@ Submitted for kind perusal and necessary direction.''',
   _ReportTemplate(
     id: 'general_sdo',
     name: 'General Report to SDO / Executive Magistrate',
-    recipient: 'The Sub-Divisional Officer, Kalna',
+    recipient: 'The Sub-Divisional Officer, {sdpoOffice}',
     subject: (_) => 'Enquiry report',
     body: (officer, _) => '''Most respectfully I beg to submit that as per endorsement/direction, enquiry was conducted locally regarding the subject matter.
 

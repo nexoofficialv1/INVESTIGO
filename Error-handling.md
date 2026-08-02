@@ -50,8 +50,15 @@ New final-document fields use defaults when opening older locally saved drafts. 
 ## v1.7.6
 Release scope is deterministic and local. Missing or invalid manifest entries are caught by automated tests before packaging.
 
+## Document action failures
+UD preview/share actions catch renderer, printing and sharing errors and show the exact failure to the officer instead of silently doing nothing.
 
-## RC-1 formatter parse hotfix
-- Final CD entry label uses an escaped newline (`I\n<time>`) inside one Dart string literal.
-- CI formatting must stop immediately on parse errors and must not continue to APK build.
-- This fix changes rendering syntax only; no case data or template fields are changed.
+## v185
+Dead Body Challan uses reduced fixed grid heights to avoid page overflow. FSL/A Form DOC exports use dedicated renderers instead of generic body dumps.
+
+## RC-1 document/export handling
+
+- Dead Body Challan preview uses the common `PdfPreviewScreen`, exposing PDF and DOC actions from one renderer path.
+- Document actions show a visible SnackBar with the failing operation and exception text.
+- Profile completeness is checked before UD official document generation.
+- Release preflight rejects known invalid PDF text-decoration syntax and station-specific hard-coded source values.

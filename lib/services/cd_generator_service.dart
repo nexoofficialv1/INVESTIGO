@@ -46,7 +46,7 @@ class CdGeneratorService {
       caseFile: caseFile,
       cdNumber: cdNumber,
       time: _nowTime(),
-      defaultPlace: 'Kalna PS',
+      defaultPlace: '',
       answers: answers,
     );
     return lines.map((e) => e.proceedings).where((e) => e.trim().isNotEmpty).join('\n\n');

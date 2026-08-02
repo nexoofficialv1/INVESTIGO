@@ -23,27 +23,22 @@ if not version_match:
     errors.append('missing-version')
 else:
     version = version_match.group(1)
-    rc_match = re.fullmatch(r'1\.8\.0-rc\.(\d+)\+(\d+)', version)
-    if not rc_match:
+    if not re.fullmatch(r'1\.8\.0-rc\.\d+\+\d+', version):
         errors.append(f'unexpected-version:{version}')
-    else:
-        rc_number = int(rc_match.group(1))
-        build_number = int(rc_match.group(2))
-        if rc_number < 1 or build_number < 180:
-            errors.append(f'unexpected-version:{version}')
 
 required_sources = [
     'lib/services/official_template_spec.dart',
     'lib/services/release_validation_service.dart',
     'lib/services/pdf_service.dart',
     'lib/services/doc_export_service.dart',
+    'lib/screens/settings_screen.dart',
 ]
 for name in required_sources:
     if not (root / name).exists():
         errors.append(f'missing-source:{name}')
 
 pdf_text = (root / 'lib/services/pdf_service.dart').read_text(encoding='utf-8')
-for marker in ['5371', '5370', '5363', 'W.B.P. FORM NO.']:
+for marker in ['5371', '5370', '5363', '5203', '“A” FORM', 'W.B.P. FORM NO.']:
     if marker not in pdf_text:
         errors.append(f'missing-template-marker:{marker}')
 

@@ -43,3 +43,13 @@ Final CD, Charge Sheet and IF-5 approvals remain independent. Export does not im
 
 ## v1.7.6
 The Release Center reads static feature metadata only and does not read, transmit or modify case data.
+
+## Station identity validation
+Document export requires a complete local OfficerProfile. No location is hard-coded and no profile data is transmitted by the offline document generators.
+
+## v185
+FSL and A Form generation remains offline. Profile data is read locally and embedded only in user-requested exports.
+
+## Configuration integrity
+
+Police Station and District are no longer supplied by hard-coded application defaults. They are taken from the locally stored Officer Profile. Settings changes remain on-device unless the officer explicitly enables/configures a backend.

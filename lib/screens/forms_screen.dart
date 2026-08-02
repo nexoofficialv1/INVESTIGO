@@ -101,7 +101,7 @@ class _FormsScreenState extends State<FormsScreen> {
                   children: [
                     Text('Auto-fill Forms', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
-                    Text('${_selectedCase.displayTitle}\nSections: ${_selectedCase.sections}\nIO: ${widget.profile.rank} ${widget.profile.name}'),
+                    Text('${_selectedCase.displayTitle}\nSections: ${_selectedCase.sections}\nIO: ${widget.profile.rank} ${widget.profile.name}\nProfile source: ${widget.profile.policeStation}, ${widget.profile.district}'),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       value: _selectedCase.id,
@@ -322,9 +322,9 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
         'EXHIBITS': 'A | One sealed packet/jar/container containing said to be ________________________________ in connection with the above noted case. | Seized on ____________ at ________________________________ by ${widget.profile.rank} ${widget.profile.name} / received from ________________________________. | Ld. C.J.M / Magistrate, ${widget.profile.district} | May be confiscated to the State after examination / may be returned after examination',
         'NATURE OF EXAMINATION': '1) Whether any poison / blood / semen / biological material / chemical / explosive / narcotic / digital trace / other relevant material could be detected in Exhibit Mark “A” or not.\n2) If detected, nature/type/source of such material and whether the same is relevant to the facts of the case.\n3) Any other points raised during examination.',
         'PERSONS IN CUSTODY': '${widget.caseFile.accusedName.trim().isEmpty ? 'Name and address of accused' : widget.caseFile.accusedName} | Occupation | Age | Sex | Date & time of arrest | J/C / P/C / Bail / At large | Ld. Court',
-        'FSL OFFICE': 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\nShankarpur, Durgapur\nPaschim Bardhaman, 713212',
-        'COURT': 'Ld. C.J.M / Magistrate, ${widget.profile.district}',
-        'IO / PS CONTACT DETAILS': 'I.O. Name:- ${widget.profile.name}\nDesignation:- ${widget.profile.rank}\nMobile No. of I.O.:- ${widget.profile.mobile}\nName of the PS:- ${widget.profile.policeStation}\nDistrict:- ${widget.profile.district}\nP.S. Address:- ________________________________\nPin Code:- ________________________________\nWhatsApp No:- ${widget.profile.mobile}\nHospital/Morgue:- ________________________________\nMessenger Name & Phone:- ________________________________',
+        'FSL OFFICE': widget.profile.defaultFslOffice.trim().isEmpty ? 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\n____________________________' : widget.profile.defaultFslOffice,
+        'COURT': widget.profile.courtName.trim().isEmpty ? 'Ld. C.J.M / Magistrate, ${widget.profile.district}' : widget.profile.courtName,
+        'IO / PS CONTACT DETAILS': 'I.O. Name:- ${widget.profile.name}\nDesignation:- ${widget.profile.rank}\nMobile No. of I.O.:- ${widget.profile.mobile}\nName of the PS:- ${widget.profile.policeStation}\nDistrict:- ${widget.profile.district}\nP.S. Address:- ${widget.profile.psAddress}\nPin Code:- ${widget.profile.pinCode}\nWhatsApp No:- ${widget.profile.mobile}\nHospital/Morgue:- ________________________________\nMessenger Name & Phone:- ________________________________',
       };
       for (final entry in defaults.entries) {
         _structured[entry.key] = TextEditingController(text: _readLineValue(entry.key, fallback: entry.value));

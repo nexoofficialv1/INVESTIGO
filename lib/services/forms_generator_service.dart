@@ -25,6 +25,7 @@ class FormsGeneratorService {
     FormTemplateInfo(id: 'cdr_caf', title: 'CDR / SDR / CAF Requisition', subtitle: 'Official table format for CDR/SDR/CAF/IMEI request', category: 'Digital Evidence'),
     FormTemplateInfo(id: 'bank_details', title: 'Bank Account Details Requisition', subtitle: 'Account statement/KYC/lien/freeze details', category: 'Cyber/Bank'),
     FormTemplateInfo(id: 'fsl', title: 'FSL Form + Challan + Label Package', subtitle: 'WB Form 5203 with exhibit list, challan and labels', category: 'Expert'),
+    FormTemplateInfo(id: 'a_form', title: 'A Form — Charge Sheet Docket Index', subtitle: 'Docket forwarding and supplied-document page index', category: 'Charge Sheet'),
     FormTemplateInfo(id: 'forwarding', title: 'Accused Forwarding Report', subtitle: 'Forwarding accused before Ld. Court', category: 'Court'),
     FormTemplateInfo(id: 'further_investigation', title: 'Further Investigation Prayer', subtitle: 'Prayer for further investigation/extension/compliance', category: 'Court Prayer'),
     FormTemplateInfo(id: 'cs_checklist', title: 'CS / FR Draft Checklist', subtitle: 'Pre-submission checklist for charge sheet/final report', category: 'Final Report'),
@@ -59,6 +60,8 @@ class FormsGeneratorService {
         return _bankDetails(officer, caseFile);
       case 'fsl':
         return _fsl(officer, caseFile);
+      case 'a_form':
+        return _aForm(officer, caseFile);
       case 'forwarding':
         return _forwarding(officer, caseFile);
       case 'further_investigation':
@@ -232,11 +235,34 @@ EXHIBIT DESCRIPTION: Exhibit Mark "A" ---- One sealed packet/jar/container conta
 HOW FOUND / SEIZED: Seized on ____________ at ________________________________ by ${officer.rank} ${officer.name} / received from ________________________________.
 NATURE OF EXAMINATION: 1) Whether any poison / blood / semen / biological material / chemical / explosive / narcotic / digital trace / other relevant material could be detected in Exhibit Mark "A" or not.\n2) If detected, nature/type/source of such material and whether the same is relevant to the facts of the case.\n3) Any other points raised during examination.
 PERSON IN CUSTODY: ________________________________
-FSL OFFICE: Head of Office & Assistant Director\nRegional Forensic Science Laboratory\nShankarpur, Durgapur\nPaschim Bardhaman, 713212
-COURT: Ld. C.J.M / Magistrate, ${officer.district}
+FSL OFFICE: ${officer.defaultFslOffice.trim().isEmpty ? 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\n____________________________' : officer.defaultFslOffice}
+COURT: ${officer.courtName.trim().isEmpty ? 'Ld. C.J.M / Magistrate, ${officer.district}' : officer.courtName}
 
 Note: Fill the above entry fields. Preview will generate Form 5203 + Exhibit List + Examination Required + Custody + Magistrate forwarding/certification + Challan + Labels.""";
   }
+
+  String _aForm(OfficerProfile officer, CaseFile caseFile) => '''A FORM STRUCTURED ENTRY
+
+COURT NAME: ${officer.courtName.trim().isEmpty ? 'Ld. Court, ${officer.district}' : officer.courtName}
+THROUGH: Bench Clerk
+REFERENCE: ${officer.policeStation} P.S. Case No. ${caseFile.psCaseNo} dated ${caseFile.caseDate} u/s ${caseFile.sections}
+TOTAL DOCKET PAGES: __________
+CHARGE SHEET NO: __________
+DOCUMENT INDEX:
+1 | F.I.R |
+2 | Seizure List |
+3 | Sketch Map of P.O. |
+4 | Statement of Witness U/S 180 BNSS |
+5 | Statement of Witness U/S 183 BNSS |
+6 | Arms Expert Report |
+7 | Mechanical Expert Report |
+8 | F.S.L. Report |
+9 | Post Mortem Report |
+10 | Injury Report |
+11 | Other relied documents |
+12 | Charge FR/CS |
+
+Note: Enter page number/range after the last pipe (|) of each row.''';
 
   String _forwarding(OfficerProfile officer, CaseFile caseFile) => '''Ref:   ${officer.policeStation} case no- ${caseFile.psCaseNo} Dated: - ${caseFile.caseDate} u/s - ${caseFile.sections}.
 

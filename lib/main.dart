@@ -23,9 +23,7 @@ class InvestigationProcessApp extends StatelessWidget {
       valueListenable: AppLanguageController.instance,
       builder: (context, language, _) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: language == AppLanguage.bengali
-            ? 'তদন্ত ও প্রক্রিয়া'
-            : 'Investigation & Process',
+        title: 'INVESTIGO',
         locale: language == AppLanguage.bengali
             ? const Locale('bn', 'IN')
             : const Locale('en', 'IN'),

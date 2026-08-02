@@ -11,6 +11,7 @@ import '../models/ud_case.dart';
 import '../services/doc_export_service.dart';
 import '../data/domain/ud_case_store.dart';
 import '../services/pdf_service.dart';
+import 'pdf_preview_screen.dart';
 
 class UdCaseScreen extends StatefulWidget {
   final OfficerProfile profile;
@@ -133,7 +134,10 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
   UdCase _collect() {
     final values = {
       for (final f in _fields) f.key: _c[f.key]!.text.trim(),
-      for (final key in [..._injuryOptions.keys, ..._dischargeOptions.keys]) key: _c[key]!.text.trim(),
+      for (final key in [..._injuryOptions.keys, ..._dischargeOptions.keys])
+        key: _c[key]!.text.trim(),
+      'policeStation': widget.profile.policeStation,
+      'district': widget.profile.district,
     };
     return _ud.copyWith(values);
   }
@@ -144,6 +148,23 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
     await _loadSaved();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('UD Inquest draft saved')));
+  }
+
+  Future<void> _runDocumentAction(String label, Future<void> Function() action) async {
+    if (!widget.profile.isComplete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Officer Profile-এ Police Station এবং District পূরণ করুন।')),
+      );
+      return;
+    }
+    try {
+      await action();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$label failed: $error')),
+      );
+    }
   }
 
   Future<void> _previewPdf() async {
@@ -169,33 +190,50 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
   }
 
   Future<void> _previewDeadBodyChallan() async {
-    _ud = _collect();
-    final bytes = await _pdf.buildUdDeadBodyChallanPdf(
-      officer: widget.profile,
-      ud: _ud,
-    );
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    await _runDocumentAction('Dead Body Challan Preview', () async {
+      _ud = _collect();
+      await _store.saveUdCase(_ud);
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Dead Body Challan — Form 5371',
+            filename:
+                'UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.pdf',
+            docFilename:
+                'UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.doc',
+            buildPdf: () => _pdf.buildUdDeadBodyChallanPdf(
+              officer: widget.profile,
+              ud: _ud,
+            ),
+            buildDoc: () => _doc.buildUdDeadBodyChallanDoc(
+              officer: widget.profile,
+              ud: _ud,
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Future<void> _exportDeadBodyChallan() async {
-    _ud = _collect();
-    final bytes = await _pdf.buildUdDeadBodyChallanPdf(
-      officer: widget.profile,
-      ud: _ud,
-    );
-    await Printing.sharePdf(
-      bytes: bytes,
-      filename: 'UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.pdf',
-    );
+    await _runDocumentAction('Dead Body Challan PDF', () async {
+      _ud = _collect();
+      final bytes = await _pdf.buildUdDeadBodyChallanPdf(officer: widget.profile, ud: _ud);
+      await Printing.sharePdf(bytes: bytes, filename: 'UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.pdf');
+    });
   }
 
   Future<void> _exportDeadBodyChallanDoc() async {
-    _ud = _collect();
-    final bytes = await _doc.buildUdDeadBodyChallanDoc(officer: widget.profile, ud: _ud);
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.doc';
-    await File(path).writeAsBytes(bytes, flush: true);
-    await Share.shareXFiles([XFile(path)], text: 'UD Dead Body Challan DOC');
+    await _runDocumentAction('Dead Body Challan DOC', () async {
+      _ud = _collect();
+      final bytes = await _doc.buildUdDeadBodyChallanDoc(officer: widget.profile, ud: _ud);
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.doc';
+      await File(path).writeAsBytes(bytes, flush: true);
+      await Share.shareXFiles([XFile(path)], text: 'UD Dead Body Challan DOC');
+    });
   }
 
   Future<void> _previewFinalReport() async {
@@ -233,7 +271,13 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
       _ud = ud;
       final map = ud.toJson();
       for (final f in _fields) {
-        _c[f.key]!.text = (map[f.key] ?? '').toString();
+        if (f.key == 'policeStation') {
+          _c[f.key]!.text = widget.profile.policeStation;
+        } else if (f.key == 'district') {
+          _c[f.key]!.text = widget.profile.district;
+        } else {
+          _c[f.key]!.text = (map[f.key] ?? '').toString();
+        }
       }
       for (final key in [..._injuryOptions.keys, ..._dischargeOptions.keys]) {
         _c[key]!.text = (map[key] ?? '').toString();
@@ -246,7 +290,13 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
       _ud = UdCase.empty(ps: widget.profile.policeStation, district: widget.profile.district);
       final map = _ud.toJson();
       for (final f in _fields) {
-        _c[f.key]!.text = (map[f.key] ?? '').toString();
+        if (f.key == 'policeStation') {
+          _c[f.key]!.text = widget.profile.policeStation;
+        } else if (f.key == 'district') {
+          _c[f.key]!.text = widget.profile.district;
+        } else {
+          _c[f.key]!.text = (map[f.key] ?? '').toString();
+        }
       }
       for (final key in [..._injuryOptions.keys, ..._dischargeOptions.keys]) {
         _c[key]!.text = (map[key] ?? '').toString();
@@ -289,6 +339,7 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: TextField(
                         controller: _c[f.key],
+                        readOnly: f.key == 'policeStation' || f.key == 'district',
                         minLines: f.lines,
                         maxLines: f.lines > 1 ? f.lines + 2 : 1,
                         decoration: InputDecoration(labelText: f.label, border: const OutlineInputBorder(), filled: true, fillColor: Colors.white),
@@ -301,6 +352,14 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
                   }),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            color: Colors.green.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text('Profile source: ${widget.profile.policeStation}, ${widget.profile.district}', style: const TextStyle(fontWeight: FontWeight.w800)),
             ),
           ),
           const SizedBox(height: 10),

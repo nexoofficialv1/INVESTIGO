@@ -33,3 +33,7 @@ Production ব্যবহারের আগে বাস্তব ডিভা
 - [Prompts](Prompts.md)
 - [Security](Security.md)
 - [Error handling](Error-handling.md)
+
+## RC-1 completion package
+
+The current source version is `1.8.0-rc.5+186`. See `RC1_COMPLETION_NOTES.md` for the consolidated Settings, CD renderer, profile binding, dashboard and official-form fixes.

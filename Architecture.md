@@ -81,3 +81,17 @@ Final CD uses the Case Diary four-column grid. Charge Sheet and IF-5 are separat
 
 ## RC-1 feature-freeze boundary (v1.7.6)
 `RcFeatureManifest` is the machine-readable release boundary. New modules cannot enter RC-1 unless this manifest, `Phases.md` and release tests are updated together. The Release Center screen exposes the same scope to officers and testers.
+
+## RC-1 Profile Binding and Documents
+All generated documents bind Police Station, District, Court, Hospital, Morgue and FSL destinations from OfficerProfile. A Form and FSL 5203 are regular-case documents; UD challan remains in the UD domain.
+
+## RC-1 v185 document export parity
+FSL Form 5203 and A Form now use dedicated PDF and DOC renderers. Dashboard routes IF5/CS directly to the Regular Case final-document workspace.
+
+## RC-1 completion update (2026-08-02)
+
+- `SettingsScreen` is the single settings hub for Officer Profile, Backup & Restore, License, Backend, Language and RC-1 status.
+- Dashboard uses an officer-centric header and exposes Settings from both the header and bottom navigation.
+- Case Diary PDF rows are content-height driven; fixed estimated row heights are prohibited.
+- UD and NCR document identity fields are bound to the current Officer Profile at save/export time.
+- FSL Form 5203 and A Form remain inside the Regular Case Forms workspace.
