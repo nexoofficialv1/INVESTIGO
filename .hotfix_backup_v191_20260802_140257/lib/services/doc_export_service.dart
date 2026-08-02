@@ -11,7 +11,6 @@ import '../models/ud_case.dart';
 import '../models/ncr_report.dart';
 import '../models/final_case_documents.dart';
 import '../core/app_language.dart';
-import 'official_template_spec.dart';
 
 class DocExportService {
   Uint8List _docBytes(String html) => Uint8List.fromList(utf8.encode(html));
@@ -498,190 +497,17 @@ extension FinalCaseDocumentDocExport on DocExportService {
     return _docBytes(_page('Final CD', html));
   }
 
-  Uint8List _buildOfficialFinalFormDoc({
-    required OfficerProfile officer,
-    required CaseFile caseFile,
-    required String courtName,
-    required String chargeSheetNo,
-    required String chargeSheetDate,
-    required String sections,
-    required String finalReportType,
-    required String originalOrSupplementary,
-    required String investigatingOfficer,
-    required String complainant,
-    required String resultCommunication,
-    required String propertyDocuments,
-    required String accusedParticulars,
-    required String unchargedAccused,
-    required String witnessList,
-    required String falseCaseAction,
-    required String laboratoryResult,
-    required String briefFacts,
-    required String dispatchDetails,
-  }) {
-    List<List<String>> propertyRows() {
-      final raw = propertyDocuments.trim();
-      if (raw.isEmpty) return [const ['1', '', '', '', '', '']];
-      if (raw.contains('|')) {
-        return _pipeRows(raw, 6, const ['1', '', '', '', '', '']);
-      }
-      return [
-        ['1', raw, '', '', '', ''],
-      ];
-    }
-
-    List<List<String>> witnessRows() {
-      final raw = witnessList.trim();
-      if (raw.isEmpty) return [const ['1', '', '', '', '', '', '']];
-      if (raw.contains('|')) {
-        return _pipeRows(raw, 7, const ['1', '', '', '', '', '', '']);
-      }
-      final lines = raw
-          .split('\n')
-          .map((line) => line.trim())
-          .where((line) => line.isNotEmpty)
-          .toList();
-      return lines
-          .asMap()
-          .entries
-          .map((entry) => [
-                '${entry.key + 1}',
-                entry.value,
-                '',
-                '',
-                '',
-                '',
-                '',
-              ])
-          .toList();
-    }
-
-    int listedCount(String raw) => raw
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .length;
-
-    String item(String number, String label, String value) =>
-        '<p><b>${_e(number)}. ${_e(label)}:</b> ${_e(value)}</p>';
-    String cells(List<String> row) =>
-        row.map((value) => '<td>${_e(value)}</td>').join();
-
-    final propertyTableRows = propertyRows()
-        .map((row) => '<tr>${cells(row)}</tr>')
-        .join();
-    final witnessTableRows = witnessRows()
-        .map((row) => '<tr>${cells(row)}</tr>')
-        .join();
-    final ioText = investigatingOfficer.trim().isEmpty
-        ? '${officer.name}, ${officer.rank}, ${officer.policeStation}'
-        : investigatingOfficer.trim();
-    final chargedCount = listedCount(accusedParticulars);
-    final unchargedCount = listedCount(unchargedAccused);
-    final ps = _shortPsName(officer.policeStation);
-    final year = _caseYear(caseFile);
-
-    final html = '''
-<html><head><meta charset="utf-8"><style>
-@page{size:A4;margin:11mm 10mm 12mm 10mm}
-body{font-family:"Times New Roman",serif;font-size:9.5pt;color:#000}
-p{margin:2.5px 0;line-height:1.18}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
-td,th{border:1px solid #000;padding:3px;vertical-align:top}
-.center{text-align:center}.right{text-align:right}.bold{font-weight:bold}.justify{text-align:justify}.page-break{page-break-before:always}.small{font-size:8.5pt}
-</style></head><body>
-<div class="center bold">P.R.B. 1943. VOL.-II</div>
-<table style="border:none"><tr><td style="border:none;width:25%" class="bold">W.B.P Form No. ${OfficialTemplateSpec.if5FormNo}</td><td style="border:none" class="center"><div class="bold" style="font-size:12pt">FINAL FORM / FINAL REPORT</div><div>(Under Section 193 BNSS)</div></td><td style="border:none;width:25%"></td></tr></table>
-${item('1','IN THE COURT OF',courtName)}
-${item('1','Dist., P.S., Year, FIR No. and Date','${officer.district}; $ps; Year $year; FIR No. ${caseFile.psCaseNo}; Date ${_officialDate(caseFile.caseDate)}')}
-${item('2','Charge-Sheet / Final Report No.',chargeSheetNo)}
-${item('3','Date',_officialDate(chargeSheetDate))}
-${item('4','Act and Sections',sections)}
-${item('5','Type of final Report',finalReportType)}
-${item('6','If F.R. unoccurred: False / Mistake of fact / Mistake of law / Non-cognizable / Civil nature','')}
-${item('7','If supplementary or original',originalOrSupplementary)}
-${item('8','Name, Rank and Number (if any) of the I.O.(s)',ioText)}
-${item('9(a)','Name of Complainant / Informant',complainant)}
-${item('9(b)','Father’s / Husband’s Name','')}
-${item('10','Date on which the Complainant / Informant was informed of result',resultCommunication)}
-<p><b>11. Details of properties / Articles / Documents recovered / seized during investigation and relied upon.</b></p>
-<table><colgroup><col style="width:6%"><col style="width:24%"><col style="width:14%"><col style="width:16%"><col style="width:25%"><col style="width:15%"></colgroup>
-<tr><th>Sl. No.</th><th>Property description</th><th>Estimated value (Rs.)</th><th>P.S. Property Register No.</th><th>From whom / where recovered or seized</th><th>Disposal</th></tr>$propertyTableRows</table>
-${item('11A','Number of accused persons charge-sheeted',chargedCount == 0 ? '' : '$chargedCount')}
-${item('11B','Number of accused persons not charge-sheeted',unchargedCount == 0 ? 'Nil' : '$unchargedCount')}
-${item('12','Particulars of accused persons charge-sheeted',accusedParticulars)}
-<p class="small">(i) Name; (ii) Father’s/Husband’s Name; (iii) Date/Year of Birth; (iv) Sex; (v) Nationality; (vi) Religion; (vii) SC/ST; (viii) Occupation; (ix) Address; (x) Criminal Number; (xi) Date of arrest; (xii) Date of release on bail; (xiii) Date forwarded to Court; (xiv) Acts and Sections; (xv) Sureties; (xvi) Previous convictions; (xvii) Custody/Bail/Absconding status.</p>
-${item('13','Particulars of accused persons not charge-sheeted / suspected',unchargedAccused)}
-<div class="page-break"></div>
-<div class="center bold">P.R.B. 1943. VOL.-II</div>
-<p><b>14. Particulars of witnesses to be examined:</b></p>
-<table><colgroup><col style="width:5%"><col style="width:17%"><col style="width:16%"><col style="width:11%"><col style="width:12%"><col style="width:24%"><col style="width:15%"></colgroup>
-<tr><th>Sl. No.</th><th>Name</th><th>Father’s / Husband’s Name</th><th>Date / year of birth</th><th>Occupation</th><th>Address</th><th>Type of evidence to be tendered</th></tr>$witnessTableRows</table>
-${item('15','If F.R. is false, indicate action taken or proposed',falseCaseAction)}
-${item('16','Result of Laboratory Analysis',laboratoryResult)}
-<p><b>17. Brief facts of the case:</b></p><p class="justify">${_e(briefFacts)}</p>
-<p style="margin-top:28px">Despatched at ${_e(dispatchDetails.trim().isEmpty ? '.................................... a.m./p.m. ....................................' : dispatchDetails)}</p>
-<table style="border:none;margin-top:35px"><tr><td style="border:none;width:45%" class="center">Officer-in-Charge<br/><br/><br/>${_e(ps)}</td><td style="border:none" class="right">Signature of the Investigating officer<br/>submitting the Charge Sheet<br/><br/>Name: ${_e(officer.name)}<br/>Rank: ${_e(officer.rank)}<br/>Police Station: ${_e(ps)}<br/>Date: ${_e(_officialDate(chargeSheetDate))}</td></tr></table>
-<div class="right small">F-142, 143, 144</div>
-</body></html>''';
-    return _docBytes(html);
+  Future<Uint8List> buildChargeSheetDoc({required OfficerProfile officer, required CaseFile caseFile, required ChargeSheetDraft draft}) async {
+    String row(String n,String l,String v)=>'<tr><td style="width:6%">$n</td><td style="width:32%"><b>${_e(l)}</b></td><td>${_e(v)}</td></tr>';
+    final html='''<div class="center bold">POLICE REPORT / CHARGE SHEET</div><div class="center small">(Under Section 193 BNSS)</div><br/><table>${row('1','In the Court of',draft.courtName)}${row('2','District / Police Station / Case','${officer.district} / ${officer.policeStation} / ${caseFile.psCaseNo} dated ${caseFile.caseDate}')}${row('3','Charge Sheet No. and Date','${draft.chargeSheetNo} ${draft.chargeSheetDate}')}${row('4','Acts and Sections',draft.sections)}${row('5','Complainant / Informant',caseFile.complainantName)}${row('6','Particulars and status of accused',draft.accusedParticulars)}${row('7','Relied documents / property',draft.reliedDocuments)}${row('8','Witnesses to be examined',draft.witnessList)}</table><p><b>Brief facts of the case</b></p><p class="justify">${_e(draft.briefFacts)}</p><div class="right" style="margin-top:38px">Signature of Investigating Officer<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}, ${_e(officer.policeStation)}</div>''';
+    return _docBytes(_page('Charge Sheet',html));
   }
 
-  Future<Uint8List> buildChargeSheetDoc({
-    required OfficerProfile officer,
-    required CaseFile caseFile,
-    required ChargeSheetDraft draft,
-  }) async {
-    return _buildOfficialFinalFormDoc(
-      officer: officer,
-      caseFile: caseFile,
-      courtName: draft.courtName,
-      chargeSheetNo: draft.chargeSheetNo,
-      chargeSheetDate: draft.chargeSheetDate,
-      sections: draft.sections.trim().isEmpty ? caseFile.sections : draft.sections,
-      finalReportType: 'Charge-Sheet',
-      originalOrSupplementary: 'Original',
-      investigatingOfficer: '${officer.name}, ${officer.rank}, ${officer.policeStation}',
-      complainant: caseFile.complainantName,
-      resultCommunication: '',
-      propertyDocuments: draft.reliedDocuments,
-      accusedParticulars: draft.accusedParticulars,
-      unchargedAccused: '',
-      witnessList: draft.witnessList,
-      falseCaseAction: '',
-      laboratoryResult: '',
-      briefFacts: draft.briefFacts,
-      dispatchDetails: '',
-    );
+  Future<Uint8List> buildIf5Doc({required OfficerProfile officer, required CaseFile caseFile, required If5Draft draft}) async {
+    String item(String n,String l,String v)=>'<p><b>$n. ${_e(l)}:</b> ${_e(v)}</p>';
+    final html='''<div class="small">P.R.B. 1943. VOL.-II</div><div class="center bold">W.B.P. FORM NO. 39 - FINAL FORM / FINAL REPORT</div><div class="center small">(Under Section 193 BNSS)</div>
+${item('1','IN THE COURT OF',draft.courtName)}${item('2','District, Police Station, FIR No. and Date','${officer.district}; ${officer.policeStation}; ${caseFile.psCaseNo}; ${caseFile.caseDate}')}${item('3','Charge-Sheet / Final Report No. and Date','${draft.chargeSheetNo} ${draft.chargeSheetDate}')}${item('4','Acts and Sections',caseFile.sections)}${item('5','Type of Final Report',draft.finalReportType)}${item('6','If F.R. unoccurred / false / mistake / non-cognizable / civil nature','')}${item('7','Supplementary or Original',draft.originalOrSupplementary)}${item('8','Name, rank and number of I.O.',draft.investigatingOfficer.isEmpty?'${officer.name}, ${officer.rank}, ${officer.policeStation}':draft.investigatingOfficer)}${item('9','Complainant / Informant',draft.complainant)}${item('10','Communication of result',draft.resultCommunication)}${item('11','Properties / Articles / Documents',draft.propertyDocuments)}${item('11A','Accused persons charge-sheeted',draft.accusedParticulars)}${item('11B','Accused persons not charge-sheeted',draft.unchargedAccused)}${item('12','Particulars of accused persons charge-sheeted',draft.accusedParticulars)}${item('13','Particulars of accused persons not charge-sheeted',draft.unchargedAccused)}${item('14','Witnesses to be examined',draft.witnessList)}${item('15','Action in false case',draft.falseCaseAction)}${item('16','Result of Laboratory Analysis',draft.laboratoryResult)}<p><b>17. Brief facts of the case:</b></p><p class="justify">${_e(draft.briefFacts)}</p>${item('Dispatch','Despatched at / date / time',draft.dispatchDetails)}<table class="no-border" style="margin-top:36px"><tr><td>Officer-in-Charge<br/><br/>${_e(officer.policeStation)}</td><td class="right">Signature of Investigating Officer<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}</td></tr></table>''';
+    return _docBytes(_page('IF-5',html));
   }
-
-  Future<Uint8List> buildIf5Doc({
-    required OfficerProfile officer,
-    required CaseFile caseFile,
-    required If5Draft draft,
-  }) async {
-    return _buildOfficialFinalFormDoc(
-      officer: officer,
-      caseFile: caseFile,
-      courtName: draft.courtName,
-      chargeSheetNo: draft.chargeSheetNo,
-      chargeSheetDate: draft.chargeSheetDate,
-      sections: caseFile.sections,
-      finalReportType: draft.finalReportType,
-      originalOrSupplementary: draft.originalOrSupplementary,
-      investigatingOfficer: draft.investigatingOfficer,
-      complainant: draft.complainant.trim().isEmpty ? caseFile.complainantName : draft.complainant,
-      resultCommunication: draft.resultCommunication,
-      propertyDocuments: draft.propertyDocuments,
-      accusedParticulars: draft.accusedParticulars,
-      unchargedAccused: draft.unchargedAccused,
-      witnessList: draft.witnessList,
-      falseCaseAction: draft.falseCaseAction,
-      laboratoryResult: draft.laboratoryResult,
-      briefFacts: draft.briefFacts,
-      dispatchDetails: draft.dispatchDetails,
-    );
-  }
-
 
 }

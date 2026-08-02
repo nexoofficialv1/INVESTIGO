@@ -28,6 +28,3 @@ This patch improves FSL Form Fill Up usability without changing the official For
 ## Official Format Rule
 
 The PDF/DOC output must keep the official West Bengal Form No. 5203 format. UI entry is simplified, but the final form layout should not be redesigned.
-
-## v191 official-output repair
-The CD PDF body is no longer placed inside `pw.Expanded` on a fixed `pw.Page`. Form 5371 uses a non-rotated landscape table to avoid `childSize <= maxChildExtent` assertions. FSL exposes a dedicated exhibit-challan preview. Charge Sheet and IF-5 share an official Form 39 renderer for PDF and DOC.

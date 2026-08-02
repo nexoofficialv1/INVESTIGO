@@ -65,6 +65,3 @@ Dead Body Challan uses reduced fixed grid heights to avoid page overflow. FSL/A 
 
 ## RC-1 v189
 If a stored case/CD date is not ISO-parseable, the renderer preserves the entered value rather than failing export. Missing year falls back to the device year only after both case date and case number are checked.
-
-## PDF flex overflow rule (v191)
-Official forms must not combine rotated content, nested `Expanded`, and fixed-height table cells. Form 5371 now uses auto-flowing `MultiPage` tables. CD rows are chunked before rendering and are inserted without a fixed-page `Expanded` wrapper.

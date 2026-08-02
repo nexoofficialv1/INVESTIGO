@@ -483,22 +483,13 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
             ..._fslCustodyPersons.asMap().entries.map((entry) => _fslCustodyEntryCard(entry.key, entry.value)),
             const Divider(height: 24),
             _entryText('IO / PS CONTACT DETAILS', maxLines: 6),
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _previewFslChallan,
-                  icon: const Icon(Icons.receipt_long),
-                  label: const Text('Challan Preview'),
-                ),
-                FilledButton.icon(
-                  onPressed: () => _applyStructuredToBody(),
-                  icon: const Icon(Icons.check),
-                  label: const Text('Apply to Form Draft'),
-                ),
-              ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: () => _applyStructuredToBody(),
+                icon: const Icon(Icons.check),
+                label: const Text('Apply to Form Draft'),
+              ),
             ),
           ],
         ),
@@ -624,27 +615,6 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
     await _store.savePendingCdAction(action);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CD pending entry saved. Daily CD builder-এ দেখা যাবে.')));
-  }
-
-  Future<void> _previewFslChallan() async {
-    if (!_isFsl) return;
-    final previewForm = await _save(askCdMention: false);
-    if (!mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PdfPreviewScreen(
-          title: 'FSL Exhibit Challan Preview',
-          filename:
-              'FSL_Exhibit_Challan_${widget.caseFile.psCaseNo.replaceAll('/', '_')}.pdf',
-          buildPdf: () => PdfService().buildFslExhibitChallanPdf(
-            officer: widget.profile,
-            caseFile: widget.caseFile,
-            form: previewForm,
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _previewPdf() async {

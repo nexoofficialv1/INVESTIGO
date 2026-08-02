@@ -56,10 +56,12 @@ class PdfService {
                 continued: i > 0,
               ),
               _wbOfficialCdStatusRow(),
-              _wbOfficialCdContinuousTable(
-                chunk,
-                officer,
-                showSignature: isLast,
+              pw.Expanded(
+                child: _wbOfficialCdContinuousTable(
+                  chunk,
+                  officer,
+                  showSignature: isLast,
+                ),
               ),
             ],
           ),
@@ -84,7 +86,7 @@ class PdfService {
             ),
           ];
 
-    const maxCharsPerPage = 2100;
+    const maxCharsPerPage = 3100;
     final normalized = <CdTableLine>[];
     for (final line in sourceLines) {
       final parts = _splitTextSafely(line.proceedings, maxCharsPerPage);
@@ -611,135 +613,6 @@ class PdfService {
 
 
 
-
-  Future<Uint8List> buildFslExhibitChallanPdf({
-    required OfficerProfile officer,
-    required CaseFile caseFile,
-    required FormNotice form,
-  }) async {
-    final doc = pw.Document(theme: await _pdfTheme());
-    final body = form.body;
-    final fslOffice = _extractFormField(
-      body,
-      'FSL OFFICE',
-      fallback: officer.defaultFslOffice.trim().isEmpty
-          ? 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\n____________________________'
-          : officer.defaultFslOffice,
-    );
-    final court = _extractFormField(
-      body,
-      'COURT',
-      fallback: officer.courtName.trim().isEmpty
-          ? 'Ld. C.J.M / Magistrate, ${officer.district}'
-          : officer.courtName,
-    );
-    final exhibitsRaw = _extractFormField(
-      body,
-      'EXHIBITS',
-      fallback: _extractFormField(
-        body,
-        'EXHIBIT DESCRIPTION',
-        fallback:
-            'A | One sealed packet/jar/container containing said to be ________________________________. | Seized on ____________ at ________________________________ by ${officer.rank} ${officer.name}. | $court | May be confiscated to the State after examination / may be returned after examination',
-      ),
-    );
-    final exhibits = _parsePipeRows(
-      exhibitsRaw,
-      5,
-      fallback: [
-        'A',
-        'One sealed packet/jar/container containing said to be ________________________________.',
-        'Seized on ____________ at ________________________________ by ${officer.rank} ${officer.name}.',
-        court,
-        'May be confiscated to the State after examination / may be returned after examination',
-      ],
-    );
-    final ref =
-        '${_shortPsName(officer.policeStation)} Case No ${caseFile.psCaseNo} Date ${caseFile.caseDate} u/s ${caseFile.sections}';
-
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(42, 30, 42, 30),
-        build: (_) => [
-          pw.Center(
-            child: pw.Text(
-              'EXHIBIT CHALLAN',
-              style: pw.TextStyle(
-                fontSize: 13,
-                fontWeight: pw.FontWeight.bold,
-                decoration: pw.TextDecoration.underline,
-              ),
-            ),
-          ),
-          pw.SizedBox(height: 14),
-          pw.Text(
-            'To\n$fslOffice\n\nThrough $court\n\nRef:- $ref',
-            style: const pw.TextStyle(fontSize: 10.5),
-          ),
-          pw.SizedBox(height: 12),
-          pw.Text(
-            'Sir,\nI am sending herewith the following exhibit(s) in connection with the above noted case for examination and opinion in the interest of investigation. Kindly acknowledge receipt of the same.',
-            style: const pw.TextStyle(fontSize: 10.5),
-            textAlign: pw.TextAlign.justify,
-          ),
-          pw.SizedBox(height: 12),
-          pw.Table(
-            border: pw.TableBorder.all(width: .55),
-            columnWidths: const {
-              0: pw.FixedColumnWidth(34),
-              1: pw.FixedColumnWidth(70),
-              2: pw.FlexColumnWidth(),
-              3: pw.FlexColumnWidth(),
-            },
-            children: [
-              _tableRow(
-                ['Sl.', 'Exhibit Mark', 'Description', 'How/when found and by whom'],
-                header: true,
-                fontSize: 9.2,
-              ),
-              ...exhibits.asMap().entries.map(
-                    (entry) => _tableRow(
-                      [
-                        '${entry.key + 1}',
-                        entry.value[0],
-                        entry.value[1],
-                        entry.value[2],
-                      ],
-                      fontSize: 9.1,
-                    ),
-                  ),
-            ],
-          ),
-          pw.SizedBox(height: 18),
-          _submittedOfficerBlock(officer),
-          pw.NewPage(),
-          ...exhibits.expand(
-            (exhibit) => <pw.Widget>[
-              pw.Center(
-                child: pw.Text(
-                  'LABEL — EXHIBIT ${exhibit[0]}',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                'To\n$fslOffice\n\nThrough $court\n\nRef:- $ref\n\nDescription of Article:\nExhibit Mark “${exhibit[0]}” — ${exhibit[1]}\n\nLabeled & prepared by me -',
-                style: const pw.TextStyle(fontSize: 10.5),
-              ),
-              pw.SizedBox(height: 18),
-              _submittedOfficerBlock(officer),
-              if (exhibit != exhibits.last) pw.NewPage(),
-            ],
-          ),
-        ],
-      ),
-    );
-    return doc.save();
-  }
 
   List<String> _splitChunks(String text, {int max = 820}) {
     final clean = text.trim();
@@ -1688,189 +1561,121 @@ extension UdSupportingReportsPdfService on PdfService {
     final doc = pw.Document(theme: await _pdfTheme());
     final bn = AppLanguageController.instance.isBengali;
     String t(String b, String e) => bn ? b : e;
-    pw.TextStyle normal([double size = 7.7]) => pw.TextStyle(fontSize: size);
-    pw.TextStyle bold([double size = 7.7]) =>
-        pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
+    pw.TextStyle normal([double size = 8.2]) => pw.TextStyle(fontSize: size);
+    pw.TextStyle bold([double size = 8.2]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
 
-    pw.Widget cell(
-      String text, {
-      bool isBold = false,
-      bool center = false,
-      double minHeight = 175,
-      double size = 7.7,
-    }) {
-      return pw.Container(
-        constraints: pw.BoxConstraints(minHeight: minHeight),
-        padding: const pw.EdgeInsets.all(4),
-        alignment: center ? pw.Alignment.topCenter : pw.Alignment.topLeft,
-        child: pw.Text(
-          text,
-          style: isBold ? bold(size) : normal(size),
-          textAlign: center ? pw.TextAlign.center : pw.TextAlign.left,
-        ),
-      );
-    }
+    pw.Widget box({required pw.Widget child, double? height, pw.Alignment alignment = pw.Alignment.center}) => pw.Container(
+          height: height,
+          alignment: alignment,
+          padding: const pw.EdgeInsets.all(3),
+          decoration: pw.BoxDecoration(border: pw.Border.all(width: .65)),
+          child: child,
+        );
+
+    pw.Widget textBox(String text, {double? height, bool isBold = false, pw.Alignment alignment = pw.Alignment.center, double size = 8.2}) =>
+        box(child: pw.Text(text, style: isBold ? bold(size) : normal(size), textAlign: pw.TextAlign.center), height: height, alignment: alignment);
+
+    pw.Widget verticalBox(String text, {double? height, bool isBold = false, double size = 8.1}) => box(
+          height: height,
+          child: pw.Transform.rotate(
+            angle: -math.pi / 2,
+            child: pw.Container(
+              width: (height ?? 280) - 12,
+              alignment: pw.Alignment.center,
+              child: pw.Text(text, style: isBold ? bold(size) : normal(size), textAlign: pw.TextAlign.center),
+            ),
+          ),
+        );
 
     final deceasedIdentity = [
       ud.deceasedName,
-      ud.religionRaceCommunity,
-    ].where((e) => e.trim().isNotEmpty).join(', ');
-    final sexAge = [
-      ud.deceasedSex,
-      ud.deceasedAge.trim().isEmpty ? '' : '${t('বয়স', 'Age')}: ${ud.deceasedAge}',
+      '(${ud.religionRaceCommunity.isEmpty ? t('ধর্ম', 'Religion') : ud.religionRaceCommunity}, ${ud.deceasedSex}, ${t('বয়স', 'Age')}- ${ud.deceasedAge})',
+      ud.deceasedAddress,
     ].where((e) => e.trim().isNotEmpty).join(', ');
     final dispatchDetails = [
       ud.dateTime,
-      ud.distanceFromPs.trim().isEmpty
-          ? ''
-          : '${t('দূরত্ব', 'Distance')}: ${ud.distanceFromPs}',
-    ].where((e) => e.trim().isNotEmpty).join('\n');
+      ud.distanceFromPs.isEmpty ? '' : '${t('দূরত্ব', 'Distance')} ${ud.distanceFromPs}',
+    ].where((e) => e.trim().isNotEmpty).join(', ');
     final identifyingOfficer = ud.identifiedByName.trim().isNotEmpty
         ? '${ud.identifiedByName}${ud.identifiedByAddress.trim().isEmpty ? '' : ', ${ud.identifiedByAddress}'}'
         : '${officer.rank} ${officer.name}, ${officer.policeStation}';
-    final bodyMarks = [ud.teeth, ud.mole, ud.tattoo, ud.otherFeatures]
-        .where((e) => e.trim().isNotEmpty)
-        .join('; ');
+    final bodyMarks = [ud.teeth, ud.mole, ud.tattoo, ud.otherFeatures].where((e) => e.trim().isNotEmpty).join('; ');
     final remarks = [
-      ud.dress.trim().isEmpty
-          ? ''
-          : '${t('পরিধেয় পোশাক', 'Wearing apparel')}: ${ud.dress}',
-      ud.articlesAtPo.trim().isEmpty
-          ? ''
-          : '${t('প্রেরিত সামগ্রী', 'Articles sent')}: ${ud.articlesAtPo}',
+      ud.dress.trim().isEmpty ? '' : '${t('পরিধেয় পোশাক', 'Wearing apparel')}: ${ud.dress}',
+      ud.articlesAtPo.trim().isEmpty ? '' : '${t('প্রেরিত সামগ্রী', 'Articles sent')}: ${ud.articlesAtPo}',
       ud.remarks,
     ].where((e) => e.trim().isNotEmpty).join('\n');
     final forwardNarrative = bn
-        ? '${ud.deceasedName} নামীয় মৃত ব্যক্তির মৃতদেহটি মৃত্যুর প্রকৃত কারণ নির্ণয়ের জন্য ময়নাতদন্তে প্রেরণ করা হলো। মৃতদেহটি $identifyingOfficer দ্বারা সনাক্ত করা হয়েছে এবং সংশ্লিষ্ট কাগজপত্রসহ পাঠানো হলো।'
-        : 'Forwarded the dead body of the deceased namely ${ud.deceasedName}, ${ud.deceasedAddress}, with all connected papers for holding post-mortem examination and ascertaining the actual cause of death. The dead body was identified by $identifyingOfficer.';
+        ? '${ud.deceasedName} নামীয় মৃত ব্যক্তির মৃতদেহটি, ${ud.deceasedAddress}, ময়নাতদন্তের মাধ্যমে মৃত্যুর প্রকৃত কারণ নির্ণয়ের জন্য ${ud.placeFound.isEmpty ? 'পুলিশ মর্গে' : ud.placeFound} প্রেরণ করা হলো। মৃতদেহটি $identifyingOfficer দ্বারা সনাক্ত করা হয়েছে এবং সংশ্লিষ্ট কাগজপত্রসহ পাঠানো হলো।'
+        : 'Forwarded the dead body of the deceased namely ${ud.deceasedName}, (${ud.religionRaceCommunity.isEmpty ? 'Religion' : ud.religionRaceCommunity}, ${ud.deceasedSex}, Age- ${ud.deceasedAge}), of ${ud.deceasedAddress} to ${ud.placeFound.isEmpty ? 'the Police Morgue' : ud.placeFound} with all connected papers for holding Post Mortem Examination over the dead body of the deceased to ascertain the actual cause of death.';
 
-    final headers = <String>[
-      t('মৃত ব্যক্তির নাম ও জাতি', 'Name and caste of deceased'),
-      t('লিঙ্গ ও বয়স', 'Sex and Age'),
-      t('বাসস্থান', 'Residence'),
-      t('মৃতদেহ যেখানে পাওয়া যায়', 'Where dead body was found'),
-      t('প্রেরণের তারিখ-সময় ও দূরত্ব', 'Date/hour of dispatch and distance'),
-      t('প্রেরণের মাধ্যম', 'Means of dispatch'),
-      t('সনাক্তকারী পুলিশ অফিসার', 'Identifying police officer'),
-      t('মৃতদেহের চিহ্ন', 'Marks on the body'),
-      t('যতদূর জানা যায় মৃত্যুর কারণ', 'Cause of death as far as known'),
-      t('মন্তব্য/পোশাক/সামগ্রী', 'Remarks / clothes / articles sent'),
-    ];
-    final values = <String>[
-      deceasedIdentity,
-      sexAge,
-      ud.deceasedAddress,
-      ud.placeFound,
-      dispatchDetails,
-      ud.directionFromPs.trim().isEmpty
-          ? t('সরকারি/ভাড়া গাড়ি', 'Government/Hired vehicle')
-          : ud.directionFromPs,
-      identifyingOfficer,
-      bodyMarks.trim().isEmpty
-          ? t('সুরতহাল রিপোর্ট অনুযায়ী', 'As per inquest report')
-          : bodyMarks,
-      ud.probableCauseOfDeath.trim().isEmpty
-          ? t('ময়নাতদন্তের মতামত সাপেক্ষে', 'Subject to post-mortem opinion')
-          : ud.probableCauseOfDeath,
-      remarks,
-    ];
-
-    const widths = <int, pw.TableColumnWidth>{
-      0: pw.FlexColumnWidth(1.25),
-      1: pw.FlexColumnWidth(.85),
-      2: pw.FlexColumnWidth(1.15),
-      3: pw.FlexColumnWidth(1.1),
-      4: pw.FlexColumnWidth(1.3),
-      5: pw.FlexColumnWidth(1.0),
-      6: pw.FlexColumnWidth(1.25),
-      7: pw.FlexColumnWidth(.9),
-      8: pw.FlexColumnWidth(1.0),
-      9: pw.FlexColumnWidth(1.55),
+    const headerHeight = 72.0;
+    const bodyHeight = 300.0;
+    const rightTopHeight = 154.0;
+    final leftWidths = <int, pw.TableColumnWidth>{
+      0: const pw.FlexColumnWidth(1.18), 1: const pw.FlexColumnWidth(.78), 2: const pw.FlexColumnWidth(1.05), 3: const pw.FlexColumnWidth(.98), 4: const pw.FlexColumnWidth(1.35),
+    };
+    final rightWidths = <int, pw.TableColumnWidth>{
+      0: const pw.FlexColumnWidth(1.2), 1: const pw.FlexColumnWidth(1.35), 2: const pw.FlexColumnWidth(.9), 3: const pw.FlexColumnWidth(.95), 4: const pw.FlexColumnWidth(1.75),
     };
 
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.fromLTRB(20, 16, 20, 16),
-        build: (_) => [
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                t('পশ্চিমবঙ্গ ফর্ম নং- ৫৩৭১', 'West Bengal Form No- 5371'),
-                style: normal(9.2),
-              ),
-              pw.Text('(P.R.B Form No-54 vide Rule-252)', style: normal(8.8)),
-            ],
-          ),
-          pw.SizedBox(height: 7),
-          pw.Center(
-            child: pw.Text(
-              '${t('রেফারেন্স', 'Ref')}: ${ud.policeStation} U/D Case No. ${ud.udNo}, ${t('তারিখ', 'Date')}: ${ud.dateTime}',
-              style: bold(9.6),
-            ),
-          ),
-          pw.SizedBox(height: 7),
-          pw.Table(
-            border: pw.TableBorder.all(width: .6),
-            columnWidths: widths,
-            children: [
-              pw.TableRow(
-                verticalAlignment: pw.TableCellVerticalAlignment.middle,
-                children: headers
-                    .map(
-                      (header) => cell(
-                        header,
-                        isBold: true,
-                        center: true,
-                        minHeight: 52,
-                        size: 7.3,
-                      ),
-                    )
-                    .toList(),
-              ),
-              pw.TableRow(
-                verticalAlignment: pw.TableCellVerticalAlignment.top,
-                children: values
-                    .map(
-                      (value) => cell(
-                        value,
-                        minHeight: 185,
-                        size: 7.6,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 9),
-          pw.Container(
-            width: double.infinity,
-            padding: const pw.EdgeInsets.all(7),
-            decoration: pw.BoxDecoration(border: pw.Border.all(width: .6)),
-            child: pw.Text(
-              forwardNarrative,
-              style: normal(8.7),
-              textAlign: pw.TextAlign.justify,
-            ),
-          ),
-          pw.SizedBox(height: 10),
-          pw.Align(
-            alignment: pw.Alignment.centerRight,
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Text(t('পেশ করা হলো', 'Submitted'), style: normal(8.8)),
+    doc.addPage(pw.Page(
+      pageFormat: PdfPageFormat.a4.landscape,
+      margin: const pw.EdgeInsets.fromLTRB(28, 20, 28, 20),
+      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+        pw.Text(t('পশ্চিমবঙ্গ ফর্ম নং- ৫৩৭১', 'West Bengal Form No- 5371'), style: normal(9.5)),
+        pw.SizedBox(height: 8),
+        pw.Center(child: pw.Text('${t('রেফারেন্স', 'Ref')}: ${ud.policeStation} U/D Case No: ${ud.udNo}, ${t('তারিখ', 'Date')}: ${ud.dateTime}', style: bold(10.2))),
+        pw.SizedBox(height: 5),
+        pw.Center(child: pw.Text('(P.R.B Form No-54 vide Rule-252)', style: normal(9.6))),
+        pw.SizedBox(height: 4),
+        pw.Table(border: pw.TableBorder.all(width: .65), columnWidths: const {
+          0: pw.FlexColumnWidth(1.18), 1: pw.FlexColumnWidth(.78), 2: pw.FlexColumnWidth(1.05), 3: pw.FlexColumnWidth(.98), 4: pw.FlexColumnWidth(1.35),
+          5: pw.FlexColumnWidth(1.2), 6: pw.FlexColumnWidth(1.35), 7: pw.FlexColumnWidth(.9), 8: pw.FlexColumnWidth(.95), 9: pw.FlexColumnWidth(1.75),
+        }, children: [pw.TableRow(children: [
+          textBox(t('মৃত ব্যক্তির নাম ও জাতি', 'Name and caste of deceased'), height: headerHeight, isBold: true),
+          textBox(t('লিঙ্গ ও বয়স', 'Sex and Age'), height: headerHeight, isBold: true),
+          textBox(t('বাসস্থান', 'Residence'), height: headerHeight, isBold: true),
+          textBox(t('মৃতদেহ যেখানে পাওয়া যায়', 'Where dead body was found'), height: headerHeight, isBold: true),
+          textBox(t('প্রেরণের তারিখ-সময় ও ময়নাতদন্ত স্থান থেকে দূরত্ব', 'Date and hours of dispatch and distance from place of postmortem'), height: headerHeight, isBold: true),
+          textBox(t('প্রেরণের মাধ্যম', 'Means of Dispatch'), height: headerHeight, isBold: true),
+          textBox(t('সনাক্তকারী পুলিশ অফিসারের নাম', 'Name of identifying Police officer'), height: headerHeight, isBold: true),
+          textBox(t('মৃতদেহের চিহ্ন', 'Marks on the body'), height: headerHeight, isBold: true),
+          textBox(t('যতদূর জানা যায় মৃত্যুর কারণ', 'Cause of death as far as known'), height: headerHeight, isBold: true),
+          textBox(t('মন্তব্য—মৃতদেহের সঙ্গে পাঠানো পোশাক/সামগ্রী', 'Remarks, Mention what clothes articles were sent herewith the body'), height: headerHeight, isBold: true),
+        ])]),
+        pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+          pw.Expanded(flex: 53, child: pw.Table(border: pw.TableBorder.all(width: .65), columnWidths: leftWidths, children: [pw.TableRow(children: [
+            verticalBox(deceasedIdentity, height: bodyHeight),
+            verticalBox('${ud.deceasedSex}, ${t('বয়স', 'Age')}- ${ud.deceasedAge}', height: bodyHeight),
+            verticalBox(ud.deceasedAddress, height: bodyHeight),
+            verticalBox(ud.placeFound, height: bodyHeight),
+            verticalBox(dispatchDetails, height: bodyHeight),
+          ])])),
+          pw.Expanded(flex: 47, child: pw.Column(children: [
+            pw.Table(border: pw.TableBorder.all(width: .65), columnWidths: rightWidths, children: [pw.TableRow(children: [
+              verticalBox(ud.directionFromPs.isEmpty ? t('সরকারি/ভাড়া গাড়ি', 'By Government/Hired vehicle') : ud.directionFromPs, height: rightTopHeight),
+              verticalBox(identifyingOfficer, height: rightTopHeight),
+              verticalBox(bodyMarks.isEmpty ? t('সুরতহাল রিপোর্ট অনুযায়ী', 'As per surathal report') : bodyMarks, height: rightTopHeight),
+              verticalBox(ud.probableCauseOfDeath.isEmpty ? t('সুরতহাল রিপোর্ট অনুযায়ী', 'As per surathal report') : ud.probableCauseOfDeath, height: rightTopHeight),
+              textBox(remarks, height: rightTopHeight, alignment: pw.Alignment.topLeft, size: 8.2),
+            ])]),
+            box(height: bodyHeight - rightTopHeight, alignment: pw.Alignment.topLeft, child: pw.Padding(
+              padding: const pw.EdgeInsets.all(7),
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+                pw.Text(forwardNarrative, style: normal(9.1), textAlign: pw.TextAlign.justify),
+                pw.Spacer(),
+                pw.Center(child: pw.Text(t('পেশ করা হলো –', 'Submitted –'), style: normal(9.2))),
                 pw.SizedBox(height: 18),
-                pw.Text('(${officer.name})', style: bold(8.8)),
-                pw.Text('${officer.rank}, ${officer.policeStation}', style: normal(8.8)),
-                pw.Text('${t('তারিখ', 'Date')}: ${ud.dateTime}', style: normal(8.8)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+                pw.Center(child: pw.Text('(${officer.name})', style: bold(9.2))),
+                pw.Center(child: pw.Text('${officer.rank}, ${officer.policeStation}', style: normal(9.2))),
+                pw.Center(child: pw.Text('${t('তারিখ', 'Date')}: ${ud.dateTime}', style: normal(9.2))),
+              ]),
+            )),
+          ])),
+        ]),
+      ]),
+    ));
     return doc.save();
   }
 
@@ -2120,385 +1925,68 @@ extension NcrPdfExport on PdfService {
     return doc.save();
   }
 
-  Future<Uint8List> _buildOfficialFinalFormPdf({
-    required OfficerProfile officer,
-    required CaseFile caseFile,
-    required String courtName,
-    required String chargeSheetNo,
-    required String chargeSheetDate,
-    required String sections,
-    required String finalReportType,
-    required String originalOrSupplementary,
-    required String investigatingOfficer,
-    required String complainant,
-    required String resultCommunication,
-    required String propertyDocuments,
-    required String accusedParticulars,
-    required String unchargedAccused,
-    required String witnessList,
-    required String falseCaseAction,
-    required String laboratoryResult,
-    required String briefFacts,
-    required String dispatchDetails,
-  }) async {
-    final doc = pw.Document(theme: await _pdfTheme());
-
-    pw.TextStyle regular([double size = 8.7]) => pw.TextStyle(fontSize: size);
-    pw.TextStyle strong([double size = 8.7]) =>
-        pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
-
-    pw.Widget item(String number, String label, String value) {
-      return pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 3),
-        child: pw.RichText(
-          text: pw.TextSpan(
-            style: regular(8.7),
-            children: [
-              pw.TextSpan(text: '$number. $label: ', style: strong(8.7)),
-              pw.TextSpan(text: value),
-            ],
-          ),
-        ),
-      );
-    }
-
-    List<List<String>> propertyRows() {
-      final raw = propertyDocuments.trim();
-      if (raw.isEmpty) return [const ['1', '', '', '', '', '']];
-      if (raw.contains('|')) {
-        return _parsePipeRows(
-          raw,
-          6,
-          fallback: const ['1', '', '', '', '', ''],
-        );
-      }
-      return [
-        ['1', raw, '', '', '', ''],
-      ];
-    }
-
-    List<List<String>> witnessRows() {
-      final raw = witnessList.trim();
-      if (raw.isEmpty) return [const ['1', '', '', '', '', '', '']];
-      if (raw.contains('|')) {
-        return _parsePipeRows(
-          raw,
-          7,
-          fallback: const ['1', '', '', '', '', '', ''],
-        );
-      }
-      final lines = raw
-          .split('\n')
-          .map((line) => line.trim())
-          .where((line) => line.isNotEmpty)
-          .toList();
-      return lines
-          .asMap()
-          .entries
-          .map(
-            (entry) => [
-              '${entry.key + 1}',
-              entry.value,
-              '',
-              '',
-              '',
-              '',
-              '',
-            ],
-          )
-          .toList();
-    }
-
-    int listedCount(String raw) => raw
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .length;
-
-    final ioText = investigatingOfficer.trim().isEmpty
-        ? '${officer.name}, ${officer.rank}, ${officer.policeStation}'
-        : investigatingOfficer.trim();
-    final chargedCount = listedCount(accusedParticulars);
-    final unchargedCount = listedCount(unchargedAccused);
-    final ps = _shortPsName(officer.policeStation);
-    final year = _caseYear(caseFile);
-
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(28, 22, 28, 24),
-        build: (_) => [
-          pw.Center(
-            child: pw.Text(
-              'P.R.B. 1943. VOL.-II',
-              style: strong(10.5),
-            ),
-          ),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'W.B.P Form No. ${OfficialTemplateSpec.if5FormNo}',
-                style: strong(10.2),
-              ),
-              pw.Column(
-                children: [
-                  pw.Text(
-                    'FINAL FORM / FINAL REPORT',
-                    style: strong(12.2),
-                  ),
-                  pw.Text('(Under Section 193 BNSS)', style: regular(9.3)),
-                ],
-              ),
-              pw.SizedBox(width: 92),
-            ],
-          ),
-          pw.SizedBox(height: 8),
-          item('1', 'IN THE COURT OF', courtName),
-          item(
-            '1',
-            'Dist., P.S., Year, FIR No. and Date',
-            '${officer.district}; $ps; Year $year; FIR No. ${caseFile.psCaseNo}; Date ${_officialDate(caseFile.caseDate)}',
-          ),
-          item('2', 'Charge-Sheet / Final Report No.', chargeSheetNo),
-          item('3', 'Date', _officialDate(chargeSheetDate)),
-          item('4', 'Act and Sections', sections),
-          item('5', 'Type of final Report', finalReportType),
-          item(
-            '6',
-            'If F.R. unoccurred: False / Mistake of fact / Mistake of law / Non-cognizable / Civil nature',
-            '',
-          ),
-          item('7', 'If supplementary or original', originalOrSupplementary),
-          item('8', 'Name, Rank and Number (if any) of the I.O.(s)', ioText),
-          item('9(a)', 'Name of Complainant / Informant', complainant),
-          item('9(b)', 'Father’s / Husband’s Name', ''),
-          item(
-            '10',
-            'Date on which the Complainant / Informant was informed of result',
-            resultCommunication,
-          ),
-          pw.SizedBox(height: 3),
-          pw.Text(
-            '11. Details of properties / Articles / Documents recovered / seized during investigation and relied upon (separate list can be attached, if necessary).',
-            style: strong(8.7),
-          ),
-          pw.SizedBox(height: 4),
-          pw.Table(
-            border: pw.TableBorder.all(width: .5),
-            columnWidths: {
-              for (var i = 0;
-                  i < OfficialTemplateSpec.if5PropertyColumnRatios.length;
-                  i++)
-                i: pw.FlexColumnWidth(
-                  OfficialTemplateSpec.if5PropertyColumnRatios[i],
-                ),
-            },
-            children: [
-              _tableRow(
-                [
-                  'Sl. No.',
-                  'Property description',
-                  'Estimated value (Rs.)',
-                  'P.S. Property Register No.',
-                  'From whom / where recovered or seized',
-                  'Disposal',
-                ],
-                header: true,
-                fontSize: 7.8,
-              ),
-              ...propertyRows().map((row) => _tableRow(row, fontSize: 7.8)),
-            ],
-          ),
-          pw.SizedBox(height: 6),
-          item(
-            '11A',
-            'Number of accused persons charge-sheeted',
-            chargedCount == 0 ? '' : '$chargedCount',
-          ),
-          item(
-            '11B',
-            'Number of accused persons not charge-sheeted',
-            unchargedCount == 0 ? 'Nil' : '$unchargedCount',
-          ),
-          item(
-            '12',
-            'Particulars of accused persons charge-sheeted',
-            accusedParticulars,
-          ),
-          pw.Text(
-            '(i) Name; (ii) Father’s/Husband’s Name; (iii) Date/Year of Birth; (iv) Sex; (v) Nationality; (vi) Religion; (vii) SC/ST; (viii) Occupation; (ix) Address; (x) Criminal Number; (xi) Date of arrest; (xii) Date of release on bail; (xiii) Date forwarded to Court; (xiv) Acts and Sections; (xv) Sureties; (xvi) Previous convictions; (xvii) Custody/Bail/Absconding status.',
-            style: regular(7.8),
-            textAlign: pw.TextAlign.justify,
-          ),
-          pw.SizedBox(height: 4),
-          item(
-            '13',
-            'Particulars of accused persons not charge-sheeted / suspected',
-            unchargedAccused,
-          ),
-          pw.NewPage(),
-          pw.Center(
-            child: pw.Text(
-              'P.R.B. 1943. VOL.-II',
-              style: strong(10.5),
-            ),
-          ),
-          pw.SizedBox(height: 6),
-          pw.Text(
-            '14. Particulars of witnesses to be examined:',
-            style: strong(9),
-          ),
-          pw.SizedBox(height: 4),
-          pw.Table(
-            border: pw.TableBorder.all(width: .5),
-            columnWidths: {
-              for (var i = 0;
-                  i < OfficialTemplateSpec.if5WitnessColumnRatios.length;
-                  i++)
-                i: pw.FlexColumnWidth(
-                  OfficialTemplateSpec.if5WitnessColumnRatios[i],
-                ),
-            },
-            children: [
-              _tableRow(
-                [
-                  'Sl. No.',
-                  'Name',
-                  'Father’s / Husband’s Name',
-                  'Date / year of birth',
-                  'Occupation',
-                  'Address',
-                  'Type of evidence to be tendered',
-                ],
-                header: true,
-                fontSize: 7.8,
-              ),
-              ...witnessRows().map((row) => _tableRow(row, fontSize: 7.8)),
-            ],
-          ),
-          pw.SizedBox(height: 7),
-          item(
-            '15',
-            'If F.R. is false, indicate action taken or proposed',
-            falseCaseAction,
-          ),
-          item('16', 'Result of Laboratory Analysis', laboratoryResult),
-          pw.SizedBox(height: 3),
-          pw.Text('17. Brief facts of the case:', style: strong(9)),
-          pw.SizedBox(height: 3),
-          pw.Text(
-            briefFacts,
-            style: regular(8.8),
-            textAlign: pw.TextAlign.justify,
-          ),
-          pw.SizedBox(height: 18),
-          pw.Text(
-            'Despatched at ${dispatchDetails.trim().isEmpty ? '.................................... a.m./p.m. ....................................' : dispatchDetails}',
-            style: regular(8.7),
-          ),
-          pw.SizedBox(height: 34),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
-            children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  pw.Text('Officer-in-Charge', style: regular(8.8)),
-                  pw.SizedBox(height: 26),
-                  pw.Text(ps, style: regular(8.8)),
-                ],
-              ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'Signature of the Investigating officer\nsubmitting the Charge Sheet',
-                    style: regular(8.8),
-                  ),
-                  pw.SizedBox(height: 18),
-                  pw.Text('Name: ${officer.name}', style: regular(8.8)),
-                  pw.Text('Rank: ${officer.rank}', style: regular(8.8)),
-                  pw.Text('Police Station: $ps', style: regular(8.8)),
-                  pw.Text(
-                    'Date: ${_officialDate(chargeSheetDate)}',
-                    style: regular(8.8),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 8),
-          pw.Align(
-            alignment: pw.Alignment.centerRight,
-            child: pw.Text('F-142, 143, 144', style: regular(8.2)),
-          ),
-        ],
-      ),
-    );
-    return doc.save();
-  }
-
   Future<Uint8List> buildChargeSheetPdf({
     required OfficerProfile officer,
     required CaseFile caseFile,
     required ChargeSheetDraft draft,
-  }) {
-    return _buildOfficialFinalFormPdf(
-      officer: officer,
-      caseFile: caseFile,
-      courtName: draft.courtName,
-      chargeSheetNo: draft.chargeSheetNo,
-      chargeSheetDate: draft.chargeSheetDate,
-      sections: draft.sections.trim().isEmpty ? caseFile.sections : draft.sections,
-      finalReportType: 'Charge-Sheet',
-      originalOrSupplementary: 'Original',
-      investigatingOfficer:
-          '${officer.name}, ${officer.rank}, ${officer.policeStation}',
-      complainant: caseFile.complainantName,
-      resultCommunication: '',
-      propertyDocuments: draft.reliedDocuments,
-      accusedParticulars: draft.accusedParticulars,
-      unchargedAccused: '',
-      witnessList: draft.witnessList,
-      falseCaseAction: '',
-      laboratoryResult: '',
-      briefFacts: draft.briefFacts,
-      dispatchDetails: '',
-    );
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    pw.Widget row(String no, String label, String value) => pw.Table(border: pw.TableBorder.all(width: .55), columnWidths: const {0: pw.FixedColumnWidth(24), 1: pw.FixedColumnWidth(150), 2: pw.FlexColumnWidth()}, children: [pw.TableRow(children: [
+      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(no, style: const pw.TextStyle(fontSize: 8.5))),
+      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(label, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold))),
+      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(value, style: const pw.TextStyle(fontSize: 8.5))),
+    ])]);
+    doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4, margin: const pw.EdgeInsets.fromLTRB(22, 18, 22, 20), build: (_) => [
+      pw.Center(child: pw.Text('POLICE REPORT / CHARGE SHEET', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold))),
+      pw.Center(child: pw.Text('(Under Section 193 BNSS)', style: const pw.TextStyle(fontSize: 8.5))), pw.SizedBox(height: 7),
+      row('1','In the Court of',draft.courtName),
+      row('2','District / Police Station / Case','${officer.district} / ${officer.policeStation} / ${caseFile.psCaseNo} dated ${caseFile.caseDate}'),
+      row('3','Charge Sheet No. and Date','${draft.chargeSheetNo}  ${draft.chargeSheetDate}'),
+      row('4','Acts and Sections',draft.sections), row('5','Complainant / Informant',caseFile.complainantName),
+      row('6','Particulars and status of accused',draft.accusedParticulars), row('7','Relied documents / property',draft.reliedDocuments),
+      row('8','Witnesses to be examined',draft.witnessList), pw.SizedBox(height: 8),
+      pw.Text('Brief facts of the case', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
+      pw.Container(width: double.infinity, padding: const pw.EdgeInsets.all(7), decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)), child: pw.Text(draft.briefFacts, textAlign: pw.TextAlign.justify, style: const pw.TextStyle(fontSize: 9))),
+      pw.SizedBox(height: 22), pw.Align(alignment: pw.Alignment.centerRight, child: pw.Column(children: [pw.Text('Signature of Investigating Officer'), pw.SizedBox(height: 24), pw.Text('(${officer.name})'), pw.Text('${officer.rank}, ${officer.policeStation}')]))
+    ]));
+    return doc.save();
   }
 
   Future<Uint8List> buildIf5Pdf({
     required OfficerProfile officer,
     required CaseFile caseFile,
     required If5Draft draft,
-  }) {
-    return _buildOfficialFinalFormPdf(
-      officer: officer,
-      caseFile: caseFile,
-      courtName: draft.courtName,
-      chargeSheetNo: draft.chargeSheetNo,
-      chargeSheetDate: draft.chargeSheetDate,
-      sections: caseFile.sections,
-      finalReportType: draft.finalReportType,
-      originalOrSupplementary: draft.originalOrSupplementary,
-      investigatingOfficer: draft.investigatingOfficer,
-      complainant: draft.complainant.trim().isEmpty
-          ? caseFile.complainantName
-          : draft.complainant,
-      resultCommunication: draft.resultCommunication,
-      propertyDocuments: draft.propertyDocuments,
-      accusedParticulars: draft.accusedParticulars,
-      unchargedAccused: draft.unchargedAccused,
-      witnessList: draft.witnessList,
-      falseCaseAction: draft.falseCaseAction,
-      laboratoryResult: draft.laboratoryResult,
-      briefFacts: draft.briefFacts,
-      dispatchDetails: draft.dispatchDetails,
-    );
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    pw.Widget item(String no, String label, String value) => pw.Padding(padding: const pw.EdgeInsets.only(bottom: 4), child: pw.RichText(text: pw.TextSpan(style: const pw.TextStyle(fontSize: 8.8), children: [pw.TextSpan(text: '$no. $label: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)), pw.TextSpan(text: value)])));
+    doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4, margin: const pw.EdgeInsets.fromLTRB(20, 16, 20, 18), header: (_) => pw.Column(children: [
+      pw.Align(alignment: pw.Alignment.centerLeft, child: pw.Text('P.R.B. 1943. VOL.-II', style: const pw.TextStyle(fontSize: 7.5))),
+      pw.Center(child: pw.Text('W.B.P. FORM NO. ${OfficialTemplateSpec.if5FormNo}  FINAL FORM / FINAL REPORT', style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold))),
+      pw.Center(child: pw.Text('(Under Section 193 BNSS)', style: const pw.TextStyle(fontSize: 8.5))), pw.SizedBox(height: 6),
+    ]), build: (_) => [
+      item('1','IN THE COURT OF',draft.courtName),
+      item('2','District, Police Station, Year, FIR No. and Date','${officer.district}; ${officer.policeStation}; ${caseFile.psCaseNo}; ${caseFile.caseDate}'),
+      item('3','Charge-Sheet / Final Report No. and Date','${draft.chargeSheetNo} ${draft.chargeSheetDate}'),
+      item('4','Acts and Sections',caseFile.sections), item('5','Type of Final Report',draft.finalReportType),
+      item('6','If F.R. unoccurred / false / mistake / non-cognizable / civil nature',''), item('7','Supplementary or Original',draft.originalOrSupplementary),
+      item('8','Name, rank and number of I.O.',draft.investigatingOfficer.isEmpty ? '${officer.name}, ${officer.rank}, ${officer.policeStation}' : draft.investigatingOfficer),
+      item('9','Name of Complainant / Informant',draft.complainant), item('10','Communication of result to complainant',draft.resultCommunication),
+      item('11','Properties / Articles / Documents recovered, seized or relied upon',draft.propertyDocuments),
+      item('11A','Number / particulars of accused persons charge-sheeted',draft.accusedParticulars),
+      item('11B','Number / particulars of accused persons not charge-sheeted',draft.unchargedAccused),
+      item('12','Particulars of accused persons charge-sheeted',draft.accusedParticulars),
+      item('13','Particulars of accused persons not charge-sheeted / suspected',draft.unchargedAccused),
+      item('14','Particulars of witnesses to be examined',draft.witnessList),
+      item('15','Action taken / proposed in false case',draft.falseCaseAction), item('16','Result of Laboratory Analysis',draft.laboratoryResult),
+      pw.SizedBox(height: 5), pw.Text('17. Brief facts of the case:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+      pw.Container(width: double.infinity, padding: const pw.EdgeInsets.all(6), decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)), child: pw.Text(draft.briefFacts, textAlign: pw.TextAlign.justify, style: const pw.TextStyle(fontSize: 8.8))),
+      if (draft.dispatchDetails.trim().isNotEmpty) ...[pw.SizedBox(height: 6), item('Dispatch','Despatched at / date / time',draft.dispatchDetails)],
+      pw.SizedBox(height: 22), pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
+        pw.Column(children: [pw.Text('Officer-in-Charge'), pw.SizedBox(height: 22), pw.Text(officer.policeStation)]),
+        pw.Column(children: [pw.Text('Signature of Investigating Officer'), pw.SizedBox(height: 22), pw.Text('(${officer.name})'), pw.Text(officer.rank)]),
+      ])
+    ]));
+    return doc.save();
   }
-
 
 }
