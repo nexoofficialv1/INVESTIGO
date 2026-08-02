@@ -25,3 +25,14 @@ Production ব্যবহারের আগে বাস্তব ডিভা
 - DOC → Word/LibreOffice rendering
 - offline/online data flow
 পরীক্ষা করা আবশ্যক।
+
+## Required project documentation
+The following top-level files are mandatory and must be updated with related code changes:
+- `Architecture.md`
+- `Phases.md`
+- `Database.md`
+- `Prompts.md`
+- `Security.md`
+- `Error-handling.md`
+
+GitHub Actions verifies that these files exist and are non-empty.

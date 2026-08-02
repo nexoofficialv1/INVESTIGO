@@ -23,6 +23,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate required project documentation
+        run: |
+          required=(Architecture.md Phases.md Database.md Prompts.md Security.md Error-handling.md)
+          for file in "${required[@]}"; do
+            test -s "$file" || { echo "Missing or empty required document: $file"; exit 1; }
+          done
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
