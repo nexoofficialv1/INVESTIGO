@@ -15,7 +15,11 @@ import '../core/app_language.dart';
 class DocExportService {
   Uint8List _docBytes(String html) => Uint8List.fromList(utf8.encode(html));
 
-  String _e(String value) => const HtmlEscape().convert(value).replaceAll('\n', '<br/>');
+  String _e(String value) => const HtmlEscape()
+      .convert(value)
+      .replaceAll('&#47;', '/')
+      .replaceAll('&#x2F;', '/')
+      .replaceAll('\n', '<br/>');
 
   String _page(String title, String body) => '''
 <html>
@@ -280,7 +284,7 @@ extension UdInquestDocExport on DocExportService {
     required OfficerProfile officer,
     required UdCase ud,
   }) async {
-    String e(String v) => const HtmlEscape().convert(v).replaceAll('\n', '<br/>');
+    String e(String v) => _e(v);
     String row(String label, String value) => '<p>$label <span style="border-bottom:1px dotted #777;display:inline-block;min-width:480px">${e(value)}</span></p>';
     final html = _page('UD Inquest', '''
 <div class="center bold">INQUEST FORM</div>
@@ -340,7 +344,7 @@ extension UdOfficialSupportingDocExport on DocExportService {
   Future<Uint8List> buildUdDeadBodyChallanDoc({required OfficerProfile officer, required UdCase ud}) async {
     final bn = AppLanguageController.instance.isBengali;
     String t(String b, String e) => bn ? b : e;
-    String e(String v) => const HtmlEscape().convert(v).replaceAll('\n', '<br/>');
+    String e(String v) => _e(v);
     final identity = '${e(ud.deceasedName)} (${e(ud.religionRaceCommunity)}, ${e(ud.deceasedSex)}, ${t('বয়স','Age')}- ${e(ud.deceasedAge)})';
     final narrative = t(
       '${e(ud.deceasedName)} নামীয় মৃত ব্যক্তির মৃতদেহটি ময়নাতদন্তের মাধ্যমে মৃত্যুর প্রকৃত কারণ নির্ণয়ের জন্য সংশ্লিষ্ট কাগজপত্রসহ প্রেরণ করা হলো।',
@@ -361,7 +365,7 @@ extension UdOfficialSupportingDocExport on DocExportService {
   Future<Uint8List> buildUdFinalReportDoc({required OfficerProfile officer, required UdCase ud}) async {
     final bn = AppLanguageController.instance.isBengali;
     String t(String b, String e) => bn ? b : e;
-    String e(String v) => const HtmlEscape().convert(v).replaceAll('\n', '<br/>');
+    String e(String v) => _e(v);
     final narrative = ud.briefFacts.isNotEmpty ? e(ud.briefFacts) : e(ud.remarks);
     return _docBytes(_page('UD Final Report', '''
 <div class="bold">${t('পশ্চিমবঙ্গ ফর্ম নং ৫৩৭০','West Bengal form No. 5370')}</div><br/>
@@ -387,7 +391,7 @@ extension NcrDocExport on DocExportService {
   }) async {
     final bn = AppLanguageController.instance.isBengali;
     String t(String b, String e) => bn ? b : e;
-    String e(String value) => const HtmlEscape().convert(value).replaceAll('\n', '<br/>');
+    String e(String value) => _e(value);
     final html = '''
 <html><head><meta charset="utf-8"><title>NCR</title>
 <style>
