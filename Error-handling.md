@@ -68,3 +68,10 @@ If a stored case/CD date is not ISO-parseable, the renderer preserves the entere
 
 ## PDF flex overflow rule (v191)
 Official forms must not combine rotated content, nested `Expanded`, and fixed-height table cells. Form 5371 now uses auto-flowing `MultiPage` tables. CD rows are chunked before rendering and are inserted without a fixed-page `Expanded` wrapper.
+
+## v193 error handling
+
+- Invalid legacy FSL `Sex` values are normalised to null before building the dropdown, preventing Flutter's duplicate/missing dropdown-value assertion.
+- Statement/CD preview prepares translation models before navigation and shows a user-facing error if the first-time model download fails.
+- Render services fall back to original text in test/non-mobile contexts so PDF/DOC generation does not crash.
+- UD narration extraction reports missing core fields and requires preview verification.

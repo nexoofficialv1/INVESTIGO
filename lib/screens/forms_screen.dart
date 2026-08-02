@@ -231,12 +231,54 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
     return rows;
   }
 
-  Map<String, TextEditingController> _controllerRow(List<String> keys, List<String> values) {
+  Map<String, TextEditingController> _controllerRow(
+    List<String> keys,
+    List<String> values,
+  ) {
     final map = <String, TextEditingController>{};
     for (var i = 0; i < keys.length; i++) {
-      map[keys[i]] = TextEditingController(text: i < values.length ? values[i] : '');
+      map[keys[i]] = TextEditingController(
+        text: i < values.length ? values[i] : '',
+      );
     }
     return map;
+  }
+
+  static const List<String> _allowedSexValues = <String>[
+    'Male',
+    'Female',
+    'Other',
+  ];
+
+  String? _validSexValue(String? raw) {
+    final value = raw?.trim() ?? '';
+    for (final allowed in _allowedSexValues) {
+      if (allowed.toLowerCase() == value.toLowerCase()) return allowed;
+    }
+    return null;
+  }
+
+  List<String> _sanitiseLegacyCustodyRow(List<String> row) {
+    final cleaned = List<String>.from(row);
+    const legacyPlaceholders = <int, String>{
+      1: 'Occupation',
+      2: 'Age',
+      3: 'Sex',
+      4: 'Date & time of arrest',
+      5: 'Bail/Custody status',
+      6: 'Court',
+    };
+    for (final entry in legacyPlaceholders.entries) {
+      if (entry.key < cleaned.length &&
+          cleaned[entry.key].trim().toLowerCase() ==
+              entry.value.toLowerCase()) {
+        cleaned[entry.key] = '';
+      }
+    }
+    if (cleaned.length > 3) {
+      cleaned[3] = _validSexValue(cleaned[3]) ?? '';
+    }
+    return cleaned;
   }
 
   void _addFslExhibit({List<String>? values}) {
@@ -277,11 +319,34 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
     if (custodyRows.isEmpty) {
       _fslCustodyPersons.add(_controllerRow(
         ['Full name', 'Occupation', 'Age', 'Sex', 'Date & time of arrest', 'Bail/Custody status', 'Court'],
-        [widget.caseFile.accusedName.trim().isEmpty ? 'Name and address of accused' : widget.caseFile.accusedName, '', '', '', '', 'J/C / P/C / Bail / At large', 'Ld. Court'],
+        [
+          widget.caseFile.accusedName.trim().isEmpty
+              ? 'Name and address of accused'
+              : widget.caseFile.accusedName,
+          '',
+          '',
+          '',
+          '',
+          'J/C / P/C / Bail / At large',
+          'Ld. Court',
+        ],
       ));
     } else {
       for (final row in custodyRows) {
-        _fslCustodyPersons.add(_controllerRow(['Full name', 'Occupation', 'Age', 'Sex', 'Date & time of arrest', 'Bail/Custody status', 'Court'], row));
+        _fslCustodyPersons.add(
+          _controllerRow(
+            [
+              'Full name',
+              'Occupation',
+              'Age',
+              'Sex',
+              'Date & time of arrest',
+              'Bail/Custody status',
+              'Court',
+            ],
+            _sanitiseLegacyCustodyRow(row),
+          ),
+        );
       }
     }
   }
@@ -321,7 +386,8 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
         'NATURE OF CRIME': widget.caseFile.firGist,
         'EXHIBITS': 'A | One sealed packet/jar/container containing said to be ________________________________ in connection with the above noted case. | Seized on ____________ at ________________________________ by ${widget.profile.rank} ${widget.profile.name} / received from ________________________________. | Ld. C.J.M / Magistrate, ${widget.profile.district} | May be confiscated to the State after examination / may be returned after examination',
         'NATURE OF EXAMINATION': '1) Whether any poison / blood / semen / biological material / chemical / explosive / narcotic / digital trace / other relevant material could be detected in Exhibit Mark “A” or not.\n2) If detected, nature/type/source of such material and whether the same is relevant to the facts of the case.\n3) Any other points raised during examination.',
-        'PERSONS IN CUSTODY': '${widget.caseFile.accusedName.trim().isEmpty ? 'Name and address of accused' : widget.caseFile.accusedName} | Occupation | Age | Sex | Date & time of arrest | J/C / P/C / Bail / At large | Ld. Court',
+        'PERSONS IN CUSTODY':
+            '${widget.caseFile.accusedName.trim().isEmpty ? 'Name and address of accused' : widget.caseFile.accusedName} |  |  |  |  | J/C / P/C / Bail / At large | Ld. Court',
         'FSL OFFICE': widget.profile.defaultFslOffice.trim().isEmpty ? 'Head of Office & Assistant Director\nRegional Forensic Science Laboratory\n____________________________' : widget.profile.defaultFslOffice,
         'COURT': widget.profile.courtName.trim().isEmpty ? 'Ld. C.J.M / Magistrate, ${widget.profile.district}' : widget.profile.courtName,
         'IO / PS CONTACT DETAILS': 'I.O. Name:- ${widget.profile.name}\nDesignation:- ${widget.profile.rank}\nMobile No. of I.O.:- ${widget.profile.mobile}\nName of the PS:- ${widget.profile.policeStation}\nDistrict:- ${widget.profile.district}\nP.S. Address:- ${widget.profile.psAddress}\nPin Code:- ${widget.profile.pinCode}\nWhatsApp No:- ${widget.profile.mobile}\nHospital/Morgue:- ________________________________\nMessenger Name & Phone:- ________________________________',
@@ -433,12 +499,24 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              Expanded(child: DropdownButtonFormField<String>(
-                value: (row['Sex']?.text.trim().isEmpty ?? true) ? null : row['Sex']!.text.trim(),
-                decoration: const InputDecoration(labelText: 'Sex', border: OutlineInputBorder()),
-                items: const ['Male', 'Female', 'Other'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-                onChanged: (v) => row['Sex']?.text = v ?? '',
-              )),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _validSexValue(row['Sex']?.text),
+                  decoration: const InputDecoration(
+                    labelText: 'Sex',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _allowedSexValues
+                      .map(
+                        (value) => DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => row['Sex']?.text = value ?? '',
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(child: TextField(controller: row['Date & time of arrest'], decoration: const InputDecoration(labelText: 'Date & time of arrest', border: OutlineInputBorder()))),
             ]),

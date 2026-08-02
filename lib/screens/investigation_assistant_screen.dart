@@ -3,16 +3,20 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../models/case_file.dart';
 import '../models/investigation_action.dart';
+import '../models/officer_profile.dart';
 import '../models/pending_cd_action.dart';
 import '../services/investigation_narration_service.dart';
 import '../services/local_store_service.dart';
 import '../services/smart_case_service.dart';
+import 'cd_builder_screen.dart';
 
 class InvestigationAssistantScreen extends StatefulWidget {
+  final OfficerProfile profile;
   final CaseFile caseFile;
 
   const InvestigationAssistantScreen({
     super.key,
+    required this.profile,
     required this.caseFile,
   });
 
@@ -284,29 +288,47 @@ class _InvestigationAssistantScreenState
         if (sketchSuggested) 'Sketch Map',
         if (indexSuggested) 'Index',
       ];
-      await showDialog<void>(
+      final openCdWriter = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Draft সংরক্ষিত'),
+          title: const Text('CD Draft প্রস্তুত'),
           content: Text(
             '$savedটি investigation action এবং pending CD entry তৈরি হয়েছে.'
             '${skipped > 0 ? '\n$skippedটি action বাদ গেছে।' : ''}'
-            '${followUp.isNotEmpty ? '\n\n${followUp.join(' ও ')} এখন তৈরি/লিংক করবেন কি না Case screen থেকে যাচাই করুন।' : ''}',
+            '${followUp.isNotEmpty ? '\n\n${followUp.join(' ও ')} এখন তৈরি/লিংক করবেন কি না Case screen থেকে যাচাই করুন।' : ''}'
+            '\n\nএখন CD Writer খুললে এই entry-গুলো স্বয়ংক্রিয়ভাবে নির্বাচিত থাকবে।',
           ),
           actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('ঠিক আছে'),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('পরে'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.note_add),
+              label: const Text('এখন CD বানান'),
             ),
           ],
         ),
       );
+      if (!mounted) return;
       setState(() {
         _result = null;
         _selected.clear();
         _editedParagraphs.clear();
         _narration.clear();
       });
+      if (openCdWriter == true && mounted) {
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CdBuilderScreen(
+              profile: widget.profile,
+              caseFile: widget.caseFile,
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -331,7 +353,7 @@ class _InvestigationAssistantScreenState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check_circle_outline),
-            label: const Text('নির্বাচিত Draft অনুমোদন করে CD-তে পাঠান'),
+            label: const Text('Draft অনুমোদন করে CD বানান'),
           ),
         ),
       ),

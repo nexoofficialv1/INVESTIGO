@@ -98,3 +98,9 @@ FSL Form 5203 and A Form now use dedicated PDF and DOC renderers. Dashboard rout
 
 ## RC-1 v189 — Official CD rendering boundary
 The Form 5363 renderer now uses `OfficialTemplateSpec.cdColumnRatios` as the single layout source for PDF and DOC output. Investigation actions are rendered as continuous rows without horizontal action dividers, matching the official case-diary visual structure. Header normalization derives the case year, official date display, Roman CD number, and station short name from case/profile data.
+
+## v193 — Bilingual Render and Narration Pipelines
+
+- `BilingualTranslationService` prepares Bengali/English ML Kit models and translates Statement/CD content at render time without replacing the original stored text.
+- `InvestigationNarrationService` creates approved pending CD actions; `CdBuilderScreen` consumes those actions into the official Form 5363 table.
+- `UdNarrationService` converts a single Bengali/English narrative into the shared `UdCase` field map. Inquest, Form 5371 and UD Final Report continue to render from that one model.

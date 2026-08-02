@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/case_file.dart';
 import '../models/cd_entry.dart';
 import '../models/officer_profile.dart';
+import '../services/bilingual_translation_service.dart';
 import '../services/doc_export_service.dart';
 import '../services/local_store_service.dart';
 import '../services/pdf_service.dart';
@@ -22,6 +23,8 @@ class CdEditorScreen extends StatefulWidget {
 
 class _CdEditorScreenState extends State<CdEditorScreen> {
   final LocalStoreService _store = LocalStoreService();
+  final BilingualTranslationService _translation =
+      BilingualTranslationService.instance;
   late CdEntry _cd;
   late final TextEditingController cdDate;
   late final TextEditingController startTime;
@@ -113,6 +116,23 @@ class _CdEditorScreenState extends State<CdEditorScreen> {
 
   Future<void> _previewPdf() async {
     await _save(finalSave: false);
+    try {
+      await _translation.prepareForTexts(
+        _currentLines().expand(
+          (line) => <String>[line.synopsis, line.proceedings],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Bengali/English translation model প্রস্তুত করা যায়নি: $error',
+          ),
+        ),
+      );
+      return;
+    }
     if (!mounted) return;
     final cdForPreview = _currentCd();
     final baseName = 'CD_${widget.caseFile.psCaseNo.replaceAll('/', '_')}_${_cd.cdNumber}';
@@ -203,7 +223,12 @@ class _CdEditorScreenState extends State<CdEditorScreen> {
           const SizedBox(height: 8),
           Text('Entry-wise Official CD Columns', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          const Text('মোবাইলে স্ক্রল করে প্রতিটি entry edit করুন। Entry No/Time, Place of Entry, Synopsis of Entry এবং Proceedings আলাদা field হিসেবে থাকবে। PDF/DOC export-এ এগুলো official column-এ বসবে।'),
+          const Text('মোবাইলে স্ক্রল করে প্রতিটি entry edit করুন। Entry No/Time, Place of Entry, Synopsis of Entry এবং Proceedings আলাদা field হিসেবে থাকবে। PDF/DOC export-এ এগুলো official column-এ বসবে। Bengali/English language নির্বাচন অনুযায়ী Synopsis ও Proceedings on-device translate হবে।'),
+          const SizedBox(height: 4),
+          const Text(
+            'প্রথমবার translation model download করতে internet লাগবে; পরে processing ফোনেই হবে. Translation powered by Google ML Kit.',
+            style: TextStyle(fontSize: 12),
+          ),
           const SizedBox(height: 10),
           ...List.generate(_lineControllers.length, (index) => _entryCard(index, _lineControllers[index])),
           OutlinedButton.icon(onPressed: _addEntry, icon: const Icon(Icons.add), label: const Text('Add Entry Line')),

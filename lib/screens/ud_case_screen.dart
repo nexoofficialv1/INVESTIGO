@@ -11,6 +11,7 @@ import '../models/ud_case.dart';
 import '../services/doc_export_service.dart';
 import '../data/domain/ud_case_store.dart';
 import '../services/pdf_service.dart';
+import '../services/ud_narration_service.dart';
 import 'pdf_preview_screen.dart';
 
 class UdCaseScreen extends StatefulWidget {
@@ -25,11 +26,14 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
   final _store = UdCaseStore();
   final _pdf = PdfService();
   final _doc = DocExportService();
+  final _narrationParser = UdNarrationService();
+  final _smartNarration = TextEditingController();
   final Map<String, TextEditingController> _c = {};
   List<UdCase> _saved = [];
   UdCase _ud = UdCase.empty();
   String _injuryPart = 'injuryHead';
   String _dischargePart = 'nostrils';
+  bool _applyingNarration = false;
 
   static const Map<String, String> _injuryOptions = {
     'injuryHead': 'Head',
@@ -140,6 +144,42 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
       'district': widget.profile.district,
     };
     return _ud.copyWith(values);
+  }
+
+  Future<void> _applyNarrationToUd() async {
+    if (_smartNarration.text.trim().isEmpty || _applyingNarration) return;
+    setState(() => _applyingNarration = true);
+    try {
+      final result = _narrationParser.analyse(_smartNarration.text);
+      for (final entry in result.values.entries) {
+        final controller = _c[entry.key];
+        if (controller != null && entry.value.trim().isNotEmpty) {
+          controller.text = entry.value.trim();
+        }
+      }
+      _ud = _collect();
+      await _store.saveUdCase(_ud);
+      await _loadSaved();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('UD নথি Auto-fill সম্পন্ন'),
+          content: Text(
+            '${result.populatedFieldCount}টি field শনাক্ত করে shared UD record-এ বসানো হয়েছে. এই একই data থেকে সুরতহাল/Inquest, Dead Body Challan এবং Final Report তৈরি হবে.'
+            '${result.warnings.isEmpty ? '' : '\n\nযাচাই করুন:\n• ${result.warnings.join('\n• ')}'}',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('ঠিক আছে'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _applyingNarration = false);
+    }
   }
 
   Future<void> _save() async {
@@ -306,6 +346,7 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
 
   @override
   void dispose() {
+    _smartNarration.dispose();
     for (final c in _c.values) {
       c.dispose();
     }
@@ -324,6 +365,53 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
         padding: const EdgeInsets.all(14),
         children: [
           if (_saved.isNotEmpty) _savedList(),
+          Card(
+            color: Colors.blue.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'এক জায়গায় UD/Inquest-এর পুরো বিবরণ লিখুন',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'বাংলা বা English-এ UD no., GDE, মৃতের পরিচয়, কোথায়/কী অবস্থায় দেহ পাওয়া গেছে, পোশাক, আঘাত, সাক্ষী ও সম্ভাব্য মৃত্যুর কারণ লিখুন। App একই shared record থেকে Inquest/সুরতহাল, Dead Body Challan ও Final Report পূরণ করবে।',
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _smartNarration,
+                    minLines: 7,
+                    maxLines: 14,
+                    decoration: const InputDecoration(
+                      labelText: 'UD / Inquest narration',
+                      hintText: 'উদাহরণ: UD No: 10/2026; মৃতের নাম: ...; মৃতদেহ পাওয়ার স্থান: ...; দেহের অবস্থান: ...; পোশাক: ...; সম্ভাব্য মৃত্যুর কারণ: ...; সাক্ষী ১: ...',
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  FilledButton.icon(
+                    onPressed: _applyingNarration ? null : _applyNarrationToUd,
+                    icon: _applyingNarration
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_awesome),
+                    label: const Text(
+                      'Auto-fill Inquest + Challan + Final Report',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(12),

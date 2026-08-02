@@ -80,3 +80,7 @@ Officer Profile is the authoritative source for Police Station and District duri
 
 ## RC-1 v189
 No database migration is required. Existing `CdEntry.tableLines` records remain backward compatible; this update changes rendering only.
+
+## v193 data-flow note
+
+No duplicate UD document database was introduced. Auto-filled narration values are saved into the existing `UdCase` record, which remains the single source for Inquest/Surathal, Dead Body Challan and UD Final Report. Statement and CD source text remains unchanged in storage; target-language text is generated during preview/export.

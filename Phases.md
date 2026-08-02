@@ -106,3 +106,17 @@ Pending outside this source package:
 - [ ] Bilingual narrative conversion engine
 - [ ] Charge Sheet official specimen lock
 - [ ] IF-5 official specimen lock
+
+## RC-1 v191 — Official output repair
+- CD saved entry rows: repaired.
+- Dead Body Challan Form 5371 PDF flex overflow: repaired.
+- Dedicated FSL Exhibit Challan preview: added.
+- Charge Sheet / IF-5 official W.B.P. Form 39 PDF and DOC renderers: added.
+- Full Flutter CI/APK validation: pending GitHub Actions.
+
+## RC-1 v193 completed
+
+- FSL custody dropdown legacy-data repair
+- Statement and CD Bengali/English render translation
+- Smart daily narration entry point and direct CD Writer hand-off
+- UD single-narration auto-fill for all linked UD documents

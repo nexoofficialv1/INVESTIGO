@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'investigation_assistant_screen.dart';
+
 import '../models/case_file.dart';
 import '../models/investigation_action.dart';
 import '../models/officer_profile.dart';
@@ -65,6 +67,19 @@ class _InvestigationScreenState extends State<InvestigationScreen> {
     final entries = await _store.loadInvestigationActions(widget.caseFile.id);
     if (!mounted) return;
     setState(() => _history = entries);
+  }
+
+  Future<void> _openNarrationAssistant() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvestigationAssistantScreen(
+          profile: widget.profile,
+          caseFile: widget.caseFile,
+        ),
+      ),
+    );
+    await _loadHistory();
   }
 
   @override
@@ -220,6 +235,32 @@ class _InvestigationScreenState extends State<InvestigationScreen> {
               ]),
             ),
           ),
+          Card(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'সারাদিনের তদন্ত এক জায়গায় লিখে CD বানান',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'বাংলা বা English-এ পুরো narration লিখুন/বলুন। App action, সময়, স্থান ও সাক্ষীর তথ্য আলাদা করে pending CD entry তৈরি করবে।',
+                  ),
+                  const SizedBox(height: 10),
+                  FilledButton.icon(
+                    onPressed: _openNarrationAssistant,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Smart Narration → CD'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           AppSectionCard(
             title: 'Daily Investigation Entry',
             child: Column(children: [

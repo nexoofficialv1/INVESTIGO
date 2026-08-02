@@ -59,3 +59,7 @@ Offline assistant output must never invent Police Station or District. Document 
 
 ## RC-1 v189 — CD output rule
 When generating Form 5363, preserve each investigation action as an individual `CdTableLine`, but render all actions inside one continuous four-column body without horizontal action separators. Never derive the form year from the device clock when a case year is available.
+
+## UD smart narration guidance
+
+For best extraction, officers may write natural sentences or use labels such as `UD No`, `GDE No`, `Name of deceased`, `Place where dead body found`, `Body position`, `Dress`, `Probable cause of death`, `Witness 1` and `Witness 2`. The full narration is always retained as `briefFacts` for verification.

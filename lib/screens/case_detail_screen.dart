@@ -12,6 +12,7 @@ import 'statement_screen.dart';
 import 'compliance_screen.dart';
 import 'sketch_map_screen.dart';
 import 'evidence_screen.dart';
+import 'investigation_assistant_screen.dart';
 import 'investigation_screen.dart';
 import 'final_case_documents_screen.dart';
 
@@ -109,6 +110,19 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     await _load();
   }
 
+  Future<void> _openSmartNarration() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvestigationAssistantScreen(
+          profile: widget.profile,
+          caseFile: _caseFile,
+        ),
+      ),
+    );
+    await _load();
+  }
+
   Future<void> _openEvidence() async {
     await Navigator.push(
       context,
@@ -179,6 +193,11 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
               childAspectRatio: 1.55,
               children: [
                 _moduleCard('Investigation', Icons.manage_search, _openInvestigation),
+                _moduleCard(
+                  'Smart Narration → CD',
+                  Icons.auto_awesome,
+                  _openSmartNarration,
+                ),
                 _moduleCard('CD Writer', Icons.note_alt, _newCd),
                 _moduleCard('Statements', Icons.record_voice_over, _openStatements),
                 _moduleCard('Forms', Icons.description, _openForms),

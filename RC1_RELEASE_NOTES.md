@@ -24,3 +24,10 @@
 ## Release rule
 
 RC-1 must pass GitHub Actions and real-device/physical-print verification before being called stable.
+
+## 1.8.0-rc.10+193
+
+- Fixed FSL custody Sex dropdown assertion.
+- Added on-device Bengali/English translation to Statement and CD exports.
+- Exposed Smart Narration → CD from the case workflow.
+- Added one-box UD narration auto-fill for Inquest, Form 5371 and Final Report.

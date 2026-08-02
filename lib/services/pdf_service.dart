@@ -15,6 +15,7 @@ import '../models/sketch_map.dart';
 import '../models/ud_case.dart';
 import '../models/ncr_report.dart';
 import '../models/final_case_documents.dart';
+import 'bilingual_translation_service.dart';
 import 'official_template_spec.dart';
 
 class PdfService {
@@ -36,8 +37,9 @@ class PdfService {
     required CaseFile caseFile,
     required CdEntry cd,
   }) async {
+    final translatedCd = await _translateCaseDiary(cd);
     final doc = pw.Document(theme: await _pdfTheme());
-    final pageChunks = _splitCdIntoPageChunks(cd);
+    final pageChunks = _splitCdIntoPageChunks(translatedCd);
 
     for (var i = 0; i < pageChunks.length; i++) {
       final chunk = pageChunks[i];
@@ -68,6 +70,38 @@ class PdfService {
     }
 
     return doc.save();
+  }
+
+  Future<CdEntry> _translateCaseDiary(CdEntry cd) async {
+    final translator = BilingualTranslationService.instance;
+    final sourceLines = cd.tableLines.isNotEmpty
+        ? cd.tableLines
+        : <CdTableLine>[
+            CdTableLine(
+              noAndHour: 'I\n${cd.startTime}',
+              placeOfEntry: cd.placeOfEntry,
+              synopsis: cd.cdNumber == 1
+                  ? 'Received copy of FIR\n+\nGist'
+                  : 'Further investigation',
+              proceedings: cd.body,
+            ),
+          ];
+    final translatedLines = <CdTableLine>[];
+    for (final line in sourceLines) {
+      translatedLines.add(
+        CdTableLine(
+          noAndHour: line.noAndHour,
+          placeOfEntry: line.placeOfEntry,
+          synopsis: await translator.translateToCurrentLanguage(line.synopsis),
+          proceedings:
+              await translator.translateToCurrentLanguage(line.proceedings),
+        ),
+      );
+    }
+    return cd.copyWith(
+      body: translatedLines.map((line) => line.proceedings).join('\n\n'),
+      tableLines: translatedLines,
+    );
   }
 
   List<CdEntry> _splitCdIntoPageChunks(CdEntry cd) {
@@ -499,30 +533,55 @@ class PdfService {
     required CaseFile caseFile,
     required StatementEntry statement,
   }) async {
+    final translator = BilingualTranslationService.instance;
+    final witnessName =
+        await translator.translateToCurrentLanguage(statement.witnessName);
+    final witnessDetails =
+        await translator.translateToCurrentLanguage(statement.witnessDetails);
+    final statementType =
+        await translator.translateToCurrentLanguage(statement.statementType);
+    final statementBody =
+        await translator.translateToCurrentLanguage(statement.body);
     final doc = pw.Document(theme: await _pdfTheme());
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.fromLTRB(42, 36, 42, 36),
         build: (context) => [
-          _centerBold('Statement of witness recorded u/s 180 BNSS'),
+          _centerBold(
+            _t(
+              'সাক্ষীর বিবৃতি, ধারা ১৮০ বিএনএসএস অনুযায়ী লিপিবদ্ধ',
+              'Statement of witness recorded u/s 180 BNSS',
+            ),
+          ),
           pw.SizedBox(height: 16),
-          pw.Text('Case Reference: ${officer.policeStation} PS Case No. ${caseFile.psCaseNo} dated ${caseFile.caseDate} u/s ${caseFile.sections}'),
+          pw.Text(
+            '${_t('মামলার সূত্র', 'Case Reference')}: ${officer.policeStation} PS Case No. ${caseFile.psCaseNo} dated ${caseFile.caseDate} u/s ${caseFile.sections}',
+          ),
           pw.SizedBox(height: 8),
-          pw.Text('Name of Witness: ${statement.witnessName}'),
-          pw.Text('Witness Details: ${statement.witnessDetails}'),
-          pw.Text('Statement Type: ${statement.statementType}'),
+          pw.Text('${_t('সাক্ষীর নাম', 'Name of Witness')}: $witnessName'),
+          pw.Text('${_t('সাক্ষীর বিবরণ', 'Witness Details')}: $witnessDetails'),
+          pw.Text('${_t('বিবৃতির ধরন', 'Statement Type')}: $statementType'),
           pw.SizedBox(height: 14),
-          pw.Text(statement.body, style: const pw.TextStyle(fontSize: 12), textAlign: pw.TextAlign.justify),
+          pw.Text(
+            statementBody,
+            style: const pw.TextStyle(fontSize: 12),
+            textAlign: pw.TextAlign.justify,
+          ),
           pw.SizedBox(height: 30),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Signature/LTI/RTI of witness'),
+              pw.Text(
+                _t(
+                  'সাক্ষীর স্বাক্ষর/এলটিআই/আরটিআই',
+                  'Signature/LTI/RTI of witness',
+                ),
+              ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text('Recorded by'),
+                  pw.Text(_t('লিপিবদ্ধ করেছেন', 'Recorded by')),
                   pw.SizedBox(height: 24),
                   pw.Text('${officer.rank} ${officer.name}'),
                   pw.Text(officer.policeStation),

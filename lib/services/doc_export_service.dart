@@ -11,6 +11,7 @@ import '../models/ud_case.dart';
 import '../models/ncr_report.dart';
 import '../models/final_case_documents.dart';
 import '../core/app_language.dart';
+import 'bilingual_translation_service.dart';
 import 'official_template_spec.dart';
 
 class DocExportService {
@@ -97,9 +98,9 @@ class DocExportService {
     required CaseFile caseFile,
     required CdEntry cd,
   }) async {
-    final lines = cd.tableLines.isNotEmpty
+    final sourceLines = cd.tableLines.isNotEmpty
         ? cd.tableLines
-        : [
+        : <CdTableLine>[
             CdTableLine(
               noAndHour: 'I\n${cd.startTime}',
               placeOfEntry: cd.placeOfEntry,
@@ -109,6 +110,19 @@ class DocExportService {
               proceedings: cd.body,
             ),
           ];
+    final translator = BilingualTranslationService.instance;
+    final lines = <CdTableLine>[];
+    for (final line in sourceLines) {
+      lines.add(
+        CdTableLine(
+          noAndHour: line.noAndHour,
+          placeOfEntry: line.placeOfEntry,
+          synopsis: await translator.translateToCurrentLanguage(line.synopsis),
+          proceedings:
+              await translator.translateToCurrentLanguage(line.proceedings),
+        ),
+      );
+    }
     final entryRows = lines
         .map(
           (line) => '''
@@ -156,12 +170,23 @@ $entryRows
     required CaseFile caseFile,
     required StatementEntry statement,
   }) async {
+    final translator = BilingualTranslationService.instance;
+    final witnessName =
+        await translator.translateToCurrentLanguage(statement.witnessName);
+    final witnessDetails =
+        await translator.translateToCurrentLanguage(statement.witnessDetails);
+    final statementType =
+        await translator.translateToCurrentLanguage(statement.statementType);
+    final statementBody =
+        await translator.translateToCurrentLanguage(statement.body);
+    final bn = AppLanguageController.instance.isBengali;
+    String t(String bengali, String english) => bn ? bengali : english;
     final html = '''
-<div class="center bold">Statement of witness recorded u/s 180 BNSS</div><br/>
-<p>Case Reference: ${_e(officer.policeStation)} PS Case No. ${_e(caseFile.psCaseNo)} dated ${_e(caseFile.caseDate)} u/s ${_e(caseFile.sections)}</p>
-<p>Name of Witness: ${_e(statement.witnessName)}<br/>Witness Details: ${_e(statement.witnessDetails)}<br/>Statement Type: ${_e(statement.statementType)}</p>
-<p class="justify">${_e(statement.body)}</p>
-<table class="no-border" style="margin-top:40px"><tr><td>Signature/LTI/RTI of witness</td><td class="right">Recorded by<br/><br/>${_e(officer.rank)} ${_e(officer.name)}<br/>${_e(officer.policeStation)}</td></tr></table>
+<div class="center bold">${_e(t('সাক্ষীর বিবৃতি, ধারা ১৮০ বিএনএসএস অনুযায়ী লিপিবদ্ধ', 'Statement of witness recorded u/s 180 BNSS'))}</div><br/>
+<p>${_e(t('মামলার সূত্র', 'Case Reference'))}: ${_e(officer.policeStation)} PS Case No. ${_e(caseFile.psCaseNo)} dated ${_e(caseFile.caseDate)} u/s ${_e(caseFile.sections)}</p>
+<p>${_e(t('সাক্ষীর নাম', 'Name of Witness'))}: ${_e(witnessName)}<br/>${_e(t('সাক্ষীর বিবরণ', 'Witness Details'))}: ${_e(witnessDetails)}<br/>${_e(t('বিবৃতির ধরন', 'Statement Type'))}: ${_e(statementType)}</p>
+<p class="justify">${_e(statementBody)}</p>
+<table class="no-border" style="margin-top:40px"><tr><td>${_e(t('সাক্ষীর স্বাক্ষর/এলটিআই/আরটিআই', 'Signature/LTI/RTI of witness'))}</td><td class="right">${_e(t('লিপিবদ্ধ করেছেন', 'Recorded by'))}<br/><br/>${_e(officer.rank)} ${_e(officer.name)}<br/>${_e(officer.policeStation)}</td></tr></table>
 ''';
     return _docBytes(_page('Statement', html));
   }

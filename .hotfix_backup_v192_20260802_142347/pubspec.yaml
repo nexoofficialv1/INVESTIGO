@@ -1,7 +1,7 @@
 name: investigo
 description: Bilingual investigation workflow and official document application.
 publish_to: 'none'
-version: 1.8.0-rc.10+193
+version: 1.8.0-rc.9+191
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -17,7 +17,6 @@ dependencies:
   share_plus: ^10.0.2
   http: ^1.2.2
   speech_to_text: ^7.0.0
-  google_mlkit_translation: ^0.14.0
 
 dev_dependencies:
   flutter_test:
