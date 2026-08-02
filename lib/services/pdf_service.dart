@@ -1618,7 +1618,16 @@ extension UdSupportingReportsPdfService on PdfService {
         numbered(3, t('ঘটনাস্থলে যাওয়ার তারিখ ও সময়', 'Date and hour of going to the spot'), spotTime),
         numbered(4, t('চূড়ান্ত প্রতিবেদন প্রেরণের তারিখ ও সময়', 'Date and hour of dispatch of the final report'), ud.updatedAt.toIso8601String().replaceFirst('T', ' ').split('.').first),
         pw.SizedBox(height: 36),
-        pw.Center(child: pw.Text('${t('অফিসার-ইন-চার্জ', 'Officer-In-Charge of')} ${ud.policeStation}', style: bold(11.2), decoration: pw.TextDecoration.underline)),
+        pw.Center(
+          child: pw.Text(
+            '${t('অফিসার-ইন-চার্জ', 'Officer-In-Charge of')} ${ud.policeStation}',
+            style: pw.TextStyle(
+              fontSize: 11.2,
+              fontWeight: pw.FontWeight.bold,
+              decoration: pw.TextDecoration.underline,
+            ),
+          ),
+        ),
         pw.SizedBox(height: 12),
         pw.Paragraph(text: narrative, style: normal(10.7), textAlign: pw.TextAlign.justify, margin: const pw.EdgeInsets.only(bottom: 12)),
         pw.Paragraph(text: conclusion, style: normal(10.7), textAlign: pw.TextAlign.justify, margin: const pw.EdgeInsets.only(bottom: 12)),
