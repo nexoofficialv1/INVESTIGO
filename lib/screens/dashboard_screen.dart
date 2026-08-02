@@ -24,6 +24,7 @@ import 'investigation_screen.dart';
 import 'backup_screen.dart';
 import 'license_screen.dart';
 import 'ncr_screen.dart';
+import 'release_center_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final OfficerProfile profile;
@@ -203,6 +204,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => NcrScreen(profile: _profile)));
   }
 
+
+  Future<void> _openReleaseCenter() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ReleaseCenterScreen()),
+    );
+  }
+
   Future<void> _openSopCompliance() async {
     final file = _latestCase;
     if (file == null) {
@@ -343,6 +352,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _Menu('Backup', 'local/server sync', Icons.backup_rounded, const Color(0xFF455A64), _openBackup),
       _Menu('Backend', 'server setup', Icons.dns_rounded, const Color(0xFF263238), _openBackendSettings),
       _Menu('License', 'fees/activation', Icons.workspace_premium_rounded, const Color(0xFF8D6E00), _openLicense),
+      _Menu('RC-1 Center', 'feature freeze', Icons.verified_user_rounded, const Color(0xFF2E7D32), _openReleaseCenter),
       _Menu('PDF Export', 'preview first', Icons.picture_as_pdf_rounded, const Color(0xFF42A5F5), () => _comingSoon('PDF Export')),
       _Menu('Final CD', 'investigation summary', Icons.verified_rounded, const Color(0xFFC2188B), _openCdWriter),
       _Menu('Sketch Map', 'builder/index', Icons.map_rounded, const Color(0xFF006B57), _openSketchMap),

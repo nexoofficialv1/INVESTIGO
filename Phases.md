@@ -1,52 +1,76 @@
 # INVESTIGO Phases
 
-## Release goal
-The first market release is an offline, officer-reviewed investigation and official-document application. It is not yet a department-wide server system.
+## Current consolidated build: 1.7.0
 
-## Phase 1 — Foundation — In progress
-- Flutter CI: analyze, test, debug APK, release APK.
-- Bengali/English application language.
-- Offline local persistence.
-- Error-visible PDF preview.
-- Required project documentation.
+### Foundation — completed
+- Stable GitHub Actions build
+- Offline local storage
+- Bilingual application framework
+- Domain models and basic screens
+- Mandatory documentation policy
 
-Exit criteria: CI green, APK installs, no startup crash, backup/restore smoke test passes.
+### Domain separation — completed in source
+- Regular Case Investigation
+- UD Case
+- NCR
 
-## Phase 2 — Core investigation — In progress
-- Case Master and case detail.
-- Daily CD entry rows and long-document pagination.
-- CD-1 versus subsequent-CD rules.
-- Investigation action register and duplicate warnings.
-- Officer-reviewed offline narration drafting.
-- Sketch Map and Index kept as separate linked documents.
+### Official UD Template Engine — in progress
+- Inquest: retained from existing accepted workflow
+- Dead Body Challan: Form 5371 locked landscape renderer added
+- UD Final Report: Form 5370 locked portrait renderer added
+- PDF and DOC commands exposed in UD screen
+- Physical print calibration still required
 
-Exit criteria: CD editor data appears identically in preview/PDF/DOC; 20+ page test passes; repeat rules behave correctly.
+### Next consolidated work
+1. CD locked renderer and multi-page row flow
+2. NCR landscape calibration
+3. Sketch Map/Index linkage and symbol library
+4. Final CD, Charge Sheet and IF-5 locked workflow
+5. Offline narration and duplicate-action rule hardening
+6. Bengali/English template review
+7. Full regression tests
+8. Release Candidate APK
 
-## Phase 3 — Official UD/NCR documents — In progress
-- NCR in locked landscape format.
-- Inquest/Surathal using supplied reference.
-- West Bengal Form No. 5371 Dead Body Challan in locked landscape format.
-- West Bengal Form No. 5370 UD Final Report in locked portrait format.
+## Deferred after market feedback
+- Court diary and hearing tracking
+- Malkhana/property lifecycle
+- Officer duty/leave tools
+- Intelligence/link analysis
+- PostgreSQL sync and multi-device deployment
 
-Exit criteria: reference comparison approved on real device and printed PDF; no generic substitute template remains.
+- [x] Professional Sketch Map landmark library and all-object rotation (v1.7.1 checkpoint)
+- [ ] Locked CD renderer calibration
+- [ ] NCR exact print calibration
 
-## Phase 4 — Case completion documents — Planned for first release
-- Final CD as a separate document.
-- Charge Sheet as a separate document.
-- IF5/Final Form as a separate document.
-- Seizure, arrest, inspection, personal-search, notice and requisition forms where official references are available.
-- Complete case document index/bundle without merging independent documents into one form.
+## Internal checkpoint v1.7.2
 
-## Phase 5 — Release candidate
-- Real-case testing with anonymised data.
-- Bengali font and pagination verification.
-- Save/reopen/export consistency.
-- Crash and recovery testing.
-- Security and privacy review.
-- Signed release build and release notes.
+- [x] Created typed Regular Case final-document source.
+- [x] Final CD, Charge Sheet and IF-5 drafts derive from that one source.
+- [x] Added case-closure validation before approval.
+- [x] Locked CD and NCR template measurements in one specification.
+- [x] Added boundary and template-ratio tests.
+- [ ] Connect the three drafts to separate review screens.
+- [ ] Bind official Final CD/CS/IF-5 PDF and DOC templates.
 
-## Deferred updates
-Court management, malkhana/property lifecycle, officer duty/leave, intelligence/link analysis, and online/server sync will be considered only after field use and feedback.
+## Internal checkpoint v1.7.3
+- Final CD review/save/approval/preview: implemented.
+- Charge Sheet review/save/approval/preview: implemented.
+- IF-5 review/save/approval/preview: implemented.
+- Exact physical calibration remains part of release-candidate print testing.
 
-## Status rule
-A phase can be marked complete only when its exit criteria have evidence from CI and real-device testing.
+- [x] v1.7.4 Final CD four-column renderer and expanded W.B.P. Form 39 field order.
+- [ ] Physical print calibration against blank departmental forms before RC-1.
+
+
+## Internal checkpoint v1.7.6 — RC-1 feature freeze
+- [x] RC-1 scope is encoded in `RcFeatureManifest`.
+- [x] Court tracking, malkhana, intelligence and online sync are explicitly deferred.
+- [x] Added in-app Release Center so scope is visible without reading source files.
+- [ ] Complete export consistency and physical print calibration before RC-1.
+
+
+## RC-1 consolidated candidate — 1.8.0-rc.1+180
+
+Status: source packaged for one GitHub push and CI APK build.
+
+Before stable release, complete the device and physical-print checklist in `RC_CHECKLIST.md`.

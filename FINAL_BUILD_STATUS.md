@@ -1,17 +1,29 @@
-# Final source status — v0.9.5+95
+# INVESTIGO RC-1 Build Status
 
-Included:
-- Bengali / English language selector
-- Existing case, CD, forms, report, UD and investigation source
-- Official-style CD PDF/DOC template
-- New NCR tab, NCR draft storage, PDF preview/share and DOC export
-- NCR A4 landscape multi-column layout based on the supplied reference image
-- GitHub Actions debug and unsigned release APK workflow
-- Termux GitHub push script and instructions
+Version: `1.8.0-rc.1+180`
 
-Not executed in this container:
-- `flutter analyze`
-- Android APK compilation
-- real-device PDF/DOC print comparison
+## Completed source validation
 
-The GitHub Actions workflow performs analyze and APK compilation after push. Any analyzer/build error must be resolved from that run log before calling the APK production-ready.
+- Required documentation present
+- Regular Case, UD and NCR domain boundaries present
+- Official-template marker validation passed
+- Release source validation script passed
+- ZIP integrity will be checked before delivery
+
+## To be completed by GitHub Actions
+
+- `flutter pub get`
+- Dart formatting
+- Flutter analysis
+- Automated tests
+- Debug APK build
+- Release APK build
+
+## Required before stable release
+
+- Install Debug APK on a real Android device
+- Verify CD save/reopen and long-CD preview
+- Compare CD, NCR and UD PDF/DOC prints with the supplied reference forms
+- Record and fix all blocking defects
+
+This package is an RC source candidate, not a production-certified stable release.

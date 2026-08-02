@@ -1,45 +1,83 @@
 # INVESTIGO Architecture
 
-## 1. Product boundary
-INVESTIGO is an offline-first Flutter mobile application for police investigation workflows. The first market release focuses on case work, CD, NCR, UD documents, sketch map/index, official forms, PDF/DOC export, and officer-reviewed smart drafting. Court tracking, duty/leave, intelligence analysis, and server sync remain deferred until field feedback.
+## Product boundary
+INVESTIGO is an offline-first investigation document application. The first market release focuses on document preparation, investigation guidance, locked official templates, local persistence, preview, PDF, DOC, print and sharing. Court tracking, malkhana, intelligence analysis and server sync are deferred.
 
-## 2. Runtime layers
+## Domain separation
 
-### Presentation
-`lib/screens/` and `lib/widgets/` contain forms, dashboards, preview screens, and editors. UI language is controlled by `AppLanguageController`.
+### 1. Regular Case Investigation Domain
+Shared master data is used only by:
+- Daily Case Diary (CD)
+- Final CD
+- Charge Sheet
+- IF-5 / Final Form
+- Sketch Map reference
+- Index reference
+- Accused, witness, arrest, seizure and investigation-action records
 
-### Domain models
-`lib/models/` contains case, CD, pending CD action, investigation action, statement, sketch map, NCR, UD, officer profile, forms, and backend configuration models.
+Sketch Map and Index are separate documents. When a CD action mentions preparation of either document, the application asks whether the officer wants to create, link or defer it.
 
-### Application services
-`lib/services/` contains local persistence, CD generation, narration parsing, PDF/DOC generation, compliance, form generation, parsing, and optional backend access.
+### 2. UD Case Domain
+A separate UD record supplies:
+- Inquest
+- Surathal narrative
+- West Bengal Form No. 5371 Dead Body Challan
+- PM requisition
+- West Bengal Form No. 5370 UD Final Report
 
-### Persistence
-The current release stores JSON in `SharedPreferences` through `LocalStoreService`. This is suitable for early offline testing but not the final multi-user database. Migration to a transactional local database must occur before production-scale use.
+UD data must never be read from or written into a regular police case record.
 
-### Document rendering
-Official documents must be template-locked. Preview, PDF, DOC, and print must use the same field mapping and page rules. A supplied official reference must never be replaced with a generic layout.
+### 3. NCR Domain
+A separate NCR record supplies only the NCR workflow and the locked landscape prosecution report.
 
-## 3. Core workflows
+## Layers
+- `models/`: immutable domain records and backward-compatible JSON conversion
+- `data/domain/`: typed facades that prevent cross-domain storage access
+- `services/`: narration rules, validation, PDF/DOC generation and local persistence
+- `screens/`: officer input, review, approval, preview and export
+- `test/`: domain, parser, document-data-flow and startup tests
 
-### Case workflow
-Case Master → Investigation Actions → Daily CD → Sketch Map/Index (separate documents) → Statements/Forms → Final CD → Charge Sheet/IF5.
+## Official Template Engine
+Every official document has a locked renderer. Layout geometry belongs to the renderer; case data is injected into named fields. A reference-backed renderer must not be replaced by a generic card or report layout.
 
-### UD workflow
-UD Master → Officer narration → Inquest/Surathal draft → Dead Body Challan → UD Final Report. Shared facts are entered once and reused, but each document remains separately editable and approvable.
+Output rule:
 
-### Smart drafting workflow
-Officer text/voice → offline parser → detected actions/facts → editable suggestions → duplicate/rule validation → officer approval → saved investigation action and/or pending CD row. No automatic finalisation is allowed.
+`domain data -> locked template -> preview/PDF/DOC/print`
 
-## 4. Investigation rules
-- PO Visit: normally once; a repeat requires a recorded justification.
-- Witness examination: repeatable and may occur in CD-1 or later CDs.
-- Sketch Map and Index: separate documents; CD may link to them.
-- FIR receipt, first PO visit, first sketch map, and first index: normally-once actions.
-- Arrest, seizure, raid/search, requisition follow-up, and witness examination: repeatable with entity/context differentiation.
+PDF is the print authority. DOC mirrors the same table structure and page orientation, but exact pagination must be verified in Microsoft Word/LibreOffice before release.
 
-## 5. Deferred architecture
-The following are intentionally deferred: court case management, malkhana/property lifecycle, officer duty/leave, intelligence/link analysis, and online sync. Their future integration points must not be hard-coded into current forms.
+## Officer control
+Narration parsing and suggested actions are advisory. No generated entry is final until the officer reviews and approves it.
 
-## 6. Change rule
-Any module boundary, data flow, persistence, document renderer, or external integration change must update this file in the same commit.
+## Sketch Map Professional Editor (v1.7.1)
+The Regular Case domain keeps Sketch Map and Index as separate documents. The editor stores normalized x/y/width/height and rotation for every symbol. PDF export uses the same object geometry and rotation.
+
+## v1.7.2 — Regular Case Final-Document Boundary
+
+`RegularCaseDocumentData` is the only shared source for **Daily CD, Final CD,
+Charge Sheet and IF-5**. It may aggregate regular-case CD rows and witness
+statements, but it must never import or contain `UdCase` or `NcrReport`.
+
+The final-document flow is:
+
+```text
+CaseFile + CdEntry[] + StatementEntry[]
+        -> RegularCaseDocumentData
+        -> FinalCaseDocumentService
+        -> FinalCdDraft / ChargeSheetDraft / If5Draft
+        -> separate officer review and approval
+```
+
+UD and NCR remain independent domains and independent storage keys.
+`OfficialTemplateSpec` owns locked CD/NCR column ratios so renderers do not
+silently redesign official forms.
+
+## Final Case Document Review Layer
+Regular Case data is transformed into three independent drafts: Final CD, Charge Sheet and IF-5. Each draft has its own persistence key, validation, approval state and renderer. A change or approval in one document does not automatically approve another document.
+
+## Final document template lock (v1.7.4)
+Final CD uses the Case Diary four-column grid. Charge Sheet and IF-5 are separate renderers over the Regular Case domain. IF-5 follows W.B.P. Form No. 39 item numbering and never reads UD or NCR data.
+
+
+## RC-1 feature-freeze boundary (v1.7.6)
+`RcFeatureManifest` is the machine-readable release boundary. New modules cannot enter RC-1 unless this manifest, `Phases.md` and release tests are updated together. The Release Center screen exposes the same scope to officers and testers.

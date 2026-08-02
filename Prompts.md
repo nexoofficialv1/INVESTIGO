@@ -1,45 +1,48 @@
-# INVESTIGO Prompts and Drafting Rules
+# INVESTIGO Prompts and Offline Drafting Rules
 
 ## Scope
-The first release uses an offline rule-based narration parser. It is not allowed to present generated text as verified fact or final police writing without officer review.
+The first release uses deterministic offline parsing, not a public online AI service. Case data remains on the device.
 
-## Input modes
-- Manual Bengali or English text.
-- Device speech-to-text converted to editable text.
-- No case narration is sent to an online AI service in the first release.
-
-## Output contract
-For every detected action, the assistant should propose:
-- date/time
-- place of entry
+## Regular Case narration
+The officer may narrate actions in Bengali or English. The parser proposes separate entries containing:
+- time
+- place
 - synopsis
-- proceedings/main body
-- action type
-- repeatability rule
-- missing-field warnings
-- source narration reference
+- proceedings
+- detected action type
 
-The officer may edit, deselect, or approve each proposal separately.
+Rules:
+- PO Visit is normally once; a repeat requires a reason.
+- Sketch Map and Index are normally once and remain separate documents.
+- Witness statements are repeatable.
+- Arrest, seizure, raid, search and follow-up requisitions may repeat for different subjects/items.
+- Suggestions are never final without officer approval.
 
-## CD drafting rules
-- Do not repeat the entire narration in every CD row.
-- Split distinct actions into distinct official rows.
-- CD-1 may contain FIR receipt, complainant/witness examination, PO visit, sketch map/index reference, raid/search, arrest, seizure and requisitions as applicable.
-- Later CDs may contain additional witness statements and follow-up actions.
-- A second PO visit requires a reason such as verification, measurement, recovery/search, or new information.
-- Witness statements remain repeatable.
-- Do not invent time, place, witness identity, section, injury, recovery, arrest, or result.
+## UD narration
+UD narration may populate draft facts for Inquest/Surathal, Dead Body Challan and Final Report. The system must display extracted facts and missing fields before export.
 
-## UD drafting rules
-Shared facts may populate Inquest/Surathal, Dead Body Challan and UD Final Report, but each document must have its own editable draft. The parser must not infer a cause of death beyond the officer/medical source text.
-
-## Language rules
-- Preserve user-entered names, addresses, sections and numbers.
-- Bengali and English are display/drafting modes; switching language must not silently translate legal facts incorrectly.
-- Official form wording is template-locked where a reference is supplied.
+## Language
+Translation changes text only. Locked layout, line position, column count, page orientation and signature block remain unchanged.
 
 ## Future online AI
-Online AI is deferred and optional. Before implementation it requires masking, encryption, an approved provider/private server, consent/configuration, audit logging and officer approval. API keys must never be embedded in the APK.
+Optional only. Before any request, identifying data must be masked; API keys must never be embedded in the APK. The returned draft must still require officer approval.
 
-## Change rule
-Any parser keyword, extraction rule, generated paragraph, online prompt, masking rule, or approval behavior must update this file and its tests.
+## Sketch map trigger
+When narration indicates that a rough sketch map was prepared, the assistant may offer to open the separate Sketch Map editor. It must not silently add a map to the CD bundle.
+
+## Final-document drafting boundary
+
+Offline drafting may summarize approved regular-case CD rows into Final CD,
+Charge Sheet and IF-5 drafts. It must not read UD or NCR records. Draft output
+must preserve facts, show missing fields, and remain editable. No final
+document becomes approved automatically.
+
+## Final document drafting boundary
+Offline narration may propose investigation text, but Final CD, Charge Sheet and IF-5 remain separate officer-reviewed drafts. Generated text must never mark any document approved.
+
+## Final-document drafting boundary
+Offline drafting may suggest narrative text only. It must not fabricate charge-sheet number, court, laboratory result, accused status or dispatch data; those require officer review.
+
+
+## v1.7.6
+No narration prompt change. Feature-freeze metadata must never alter officer narration or generated document content.

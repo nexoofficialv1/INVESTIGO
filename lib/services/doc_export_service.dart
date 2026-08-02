@@ -9,6 +9,7 @@ import '../models/sketch_map.dart';
 import '../models/statement_entry.dart';
 import '../models/ud_case.dart';
 import '../models/ncr_report.dart';
+import '../models/final_case_documents.dart';
 import '../core/app_language.dart';
 
 class DocExportService {
@@ -216,6 +217,49 @@ ${row('Witness (ii) Name/Address:', ud.witness2NameAddress)}
     return _docBytes(html);
   }
 }
+extension UdOfficialSupportingDocExport on DocExportService {
+  Future<Uint8List> buildUdDeadBodyChallanDoc({required OfficerProfile officer, required UdCase ud}) async {
+    final bn = AppLanguageController.instance.isBengali;
+    String t(String b, String e) => bn ? b : e;
+    String e(String v) => const HtmlEscape().convert(v).replaceAll('\n', '<br/>');
+    final identity = '${e(ud.deceasedName)} (${e(ud.religionRaceCommunity)}, ${e(ud.deceasedSex)}, ${t('বয়স','Age')}- ${e(ud.deceasedAge)})';
+    final narrative = t(
+      '${e(ud.deceasedName)} নামীয় মৃত ব্যক্তির মৃতদেহটি ময়নাতদন্তের মাধ্যমে মৃত্যুর প্রকৃত কারণ নির্ণয়ের জন্য সংশ্লিষ্ট কাগজপত্রসহ প্রেরণ করা হলো।',
+      'Forwarded the dead body of the deceased namely ${e(ud.deceasedName)}, (${e(ud.deceasedSex)}, Age- ${e(ud.deceasedAge)}) of ${e(ud.deceasedAddress)} with all connected papers for holding Post Mortem Examination to ascertain the actual cause of death.',
+    );
+    return _docBytes('''<html><head><meta charset="utf-8"><style>
+@page { size:A4 landscape; margin:10mm 9mm; } body{font-family:"Noto Serif Bengali","Times New Roman",serif;font-size:9pt} table{border-collapse:collapse;width:100%;table-layout:fixed}td,th{border:1px solid #000;padding:3px;vertical-align:middle}.c{text-align:center}.v{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center}.j{text-align:justify}
+</style></head><body>
+<div>${t('পশ্চিমবঙ্গ ফর্ম নং- ৫৩৭১','West Bengal Form No- 5371')}</div>
+<div class="c"><b>${t('রেফারেন্স','Ref')}: ${e(ud.policeStation)} U/D Case No: ${e(ud.udNo)}, ${t('তারিখ','Date')}: ${e(ud.dateTime)}</b><br/>(P.R.B Form No-54 vide Rule-252)</div><br/>
+<table><colgroup><col style="width:9%"><col style="width:6%"><col style="width:8%"><col style="width:8%"><col style="width:10%"><col style="width:9%"><col style="width:10%"><col style="width:7%"><col style="width:7%"><col style="width:13%"></colgroup>
+<tr style="height:80px"><th>${t('মৃত ব্যক্তির নাম ও জাতি','Name and caste of deceased')}</th><th>${t('লিঙ্গ ও বয়স','Sex and Age')}</th><th>${t('বাসস্থান','Residence')}</th><th>${t('মৃতদেহ যেখানে পাওয়া যায়','Where dead body was found')}</th><th>${t('প্রেরণের তারিখ-সময় ও দূরত্ব','Date and hours of dispatch and distance from place of postmortem')}</th><th>${t('প্রেরণের মাধ্যম','Means of Dispatch')}</th><th>${t('সনাক্তকারী পুলিশ অফিসারের নাম','Name of identifying Police officer')}</th><th>${t('মৃতদেহের চিহ্ন','Marks on the body')}</th><th>${t('মৃত্যুর কারণ','Cause of death as far as known')}</th><th>${t('মন্তব্য','Remarks')}</th></tr>
+<tr style="height:280px"><td class="v">$identity</td><td class="v">${e(ud.deceasedSex)}, ${e(ud.deceasedAge)}</td><td class="v">${e(ud.deceasedAddress)}</td><td class="v">${e(ud.placeFound)}</td><td class="v">${e(ud.dateTime)} ${e(ud.distanceFromPs)}</td><td class="v">${e(ud.directionFromPs)}</td><td class="v">${e(ud.identifiedByName.isEmpty ? '${officer.rank} ${officer.name}' : ud.identifiedByName)}</td><td class="v">${e(ud.otherFeatures)}</td><td class="v">${e(ud.probableCauseOfDeath)}</td><td>${e(ud.dress)}<br/>${e(ud.articlesAtPo)}<br/>${e(ud.remarks)}</td></tr>
+<tr><td colspan="5"></td><td colspan="5" class="j">$narrative<br/><br/><div class="c">${t('পেশ করা হলো –','Submitted –')}<br/><br/>(${e(officer.name)})<br/>${e(officer.rank)}, ${e(officer.policeStation)}<br/>${t('তারিখ','Date')}: ${e(ud.dateTime)}</div></td></tr></table>
+</body></html>''');
+  }
+
+  Future<Uint8List> buildUdFinalReportDoc({required OfficerProfile officer, required UdCase ud}) async {
+    final bn = AppLanguageController.instance.isBengali;
+    String t(String b, String e) => bn ? b : e;
+    String e(String v) => const HtmlEscape().convert(v).replaceAll('\n', '<br/>');
+    final narrative = ud.briefFacts.isNotEmpty ? e(ud.briefFacts) : e(ud.remarks);
+    return _docBytes(_page('UD Final Report', '''
+<div class="bold">${t('পশ্চিমবঙ্গ ফর্ম নং ৫৩৭০','West Bengal form No. 5370')}</div><br/>
+<div class="center bold">${t('অস্বাভাবিক মৃত্যুর নথিভুক্ত মামলার চূড়ান্ত প্রতিবেদন ম্যাজিস্ট্রেটের নিকট প্রেরণ','FINAL REPORT OF A REPORTED CASE OF UNNATURAL DEATH SENT TO THE MAGISTRATE')}</div>
+<div class="center bold">(P.R.B. Form No.- 53 Vide Rule 276)</div><br/>
+<p>1. ${t('থানা, প্রথম তথ্যের নম্বর ও তারিখ','Station, Number and date of first information')} : ${e(ud.policeStation)} U/D Case No. ${e(ud.udNo)}, Dated- ${e(ud.dateTime)}</p>
+<p>2. ${t('মৃত ব্যক্তির নাম','Name of the deceased')} : ${e(ud.deceasedName)} (${e(ud.deceasedSex)}, Age- ${e(ud.deceasedAge)})</p>
+<p>3. ${t('ঘটনাস্থলে যাওয়ার তারিখ ও সময়','Date and hour of going to the spot')} : ${e(ud.deadBodyFoundDate)} ${e(ud.deadBodyFoundTime)}</p>
+<p>4. ${t('চূড়ান্ত প্রতিবেদন প্রেরণের তারিখ ও সময়','Date and hour of dispatch of the final report')} : ${e(ud.dateTime)}</p><br/>
+<div class="center bold"><u>${t('অফিসার-ইন-চার্জ','Officer-In-Charge of')} ${e(ud.policeStation)}</u></div>
+<p class="justify">$narrative</p>
+<p class="justify">${e(ud.remarks)}</p>
+<p>${t('অতএব, উপরোক্ত U/D মামলাটি নথিভুক্ত করে বাধিত করার প্রার্থনা করছি।','Therefore, I am praying that this U/D Case may kindly be filed and obliged.')}</p>
+<div class="right" style="margin-top:35px">${t('পেশ করা হলো','Submitted')}<br/><br/>(${e(officer.name)})<br/>${e(officer.rank)}, ${e(officer.policeStation)}<br/>${e(officer.district)}, ${t('তারিখ','Dt')}- ${e(ud.dateTime)}</div>
+'''));
+  }
+}
 
 extension NcrDocExport on DocExportService {
   Future<Uint8List> buildNcrDoc({
@@ -267,4 +311,30 @@ td,th { border:1px solid #000; padding:3px; vertical-align:top; }
 </body></html>''';
     return _docBytes(html);
   }
+}
+
+extension FinalCaseDocumentDocExport on DocExportService {
+  Future<Uint8List> buildFinalCdDoc({required OfficerProfile officer, required CaseFile caseFile, required FinalCdDraft draft}) async {
+    final html = '''
+<div class="small">West Bengal Form No. 5363 <span style="float:right">B.P. Form No. 38</span></div>
+<div class="center bold">CASE DIARY UNDER SECTION 192 BNSS</div><div class="center small">(Regulation 264)</div>
+<p class="small">Police Station: ${_e(officer.policeStation)} &nbsp; District: ${_e(officer.district)}<br/>First Information No. ${_e(caseFile.psCaseNo)} dated ${_e(caseFile.caseDate)} U/S ${_e(caseFile.sections)}<br/>Name of Complainant: ${_e(caseFile.complainantName)}<br/><b>Case Diary: FINAL</b></p>
+<table class="cd"><tr><th style="width:10%">No. and hour of entry</th><th style="width:10%">Place of entry</th><th style="width:13%">Synopsis of entry</th><th style="width:67%">Particulars of enquiry</th></tr>
+<tr><td>I<br/>${_e(draft.entryTime)}</td><td>${_e(draft.entryPlace)}</td><td>${_e(draft.synopsis)}</td><td class="justify">${_e(draft.narrative)}<br/><br/><b>Status of accused:</b> ${_e(draft.accusedStatus)}<br/><br/><b>Witnesses:</b> ${_e(draft.witnessList)}<div class="right" style="margin-top:28px">Submitted<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}, ${_e(officer.policeStation)}</div></td></tr></table>''';
+    return _docBytes(_page('Final CD', html));
+  }
+
+  Future<Uint8List> buildChargeSheetDoc({required OfficerProfile officer, required CaseFile caseFile, required ChargeSheetDraft draft}) async {
+    String row(String n,String l,String v)=>'<tr><td style="width:6%">$n</td><td style="width:32%"><b>${_e(l)}</b></td><td>${_e(v)}</td></tr>';
+    final html='''<div class="center bold">POLICE REPORT / CHARGE SHEET</div><div class="center small">(Under Section 193 BNSS)</div><br/><table>${row('1','In the Court of',draft.courtName)}${row('2','District / Police Station / Case','${officer.district} / ${officer.policeStation} / ${caseFile.psCaseNo} dated ${caseFile.caseDate}')}${row('3','Charge Sheet No. and Date','${draft.chargeSheetNo} ${draft.chargeSheetDate}')}${row('4','Acts and Sections',draft.sections)}${row('5','Complainant / Informant',caseFile.complainantName)}${row('6','Particulars and status of accused',draft.accusedParticulars)}${row('7','Relied documents / property',draft.reliedDocuments)}${row('8','Witnesses to be examined',draft.witnessList)}</table><p><b>Brief facts of the case</b></p><p class="justify">${_e(draft.briefFacts)}</p><div class="right" style="margin-top:38px">Signature of Investigating Officer<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}, ${_e(officer.policeStation)}</div>''';
+    return _docBytes(_page('Charge Sheet',html));
+  }
+
+  Future<Uint8List> buildIf5Doc({required OfficerProfile officer, required CaseFile caseFile, required If5Draft draft}) async {
+    String item(String n,String l,String v)=>'<p><b>$n. ${_e(l)}:</b> ${_e(v)}</p>';
+    final html='''<div class="small">P.R.B. 1943. VOL.-II</div><div class="center bold">W.B.P. FORM NO. 39 - FINAL FORM / FINAL REPORT</div><div class="center small">(Under Section 193 BNSS)</div>
+${item('1','IN THE COURT OF',draft.courtName)}${item('2','District, Police Station, FIR No. and Date','${officer.district}; ${officer.policeStation}; ${caseFile.psCaseNo}; ${caseFile.caseDate}')}${item('3','Charge-Sheet / Final Report No. and Date','${draft.chargeSheetNo} ${draft.chargeSheetDate}')}${item('4','Acts and Sections',caseFile.sections)}${item('5','Type of Final Report',draft.finalReportType)}${item('6','If F.R. unoccurred / false / mistake / non-cognizable / civil nature','')}${item('7','Supplementary or Original',draft.originalOrSupplementary)}${item('8','Name, rank and number of I.O.',draft.investigatingOfficer.isEmpty?'${officer.name}, ${officer.rank}, ${officer.policeStation}':draft.investigatingOfficer)}${item('9','Complainant / Informant',draft.complainant)}${item('10','Communication of result',draft.resultCommunication)}${item('11','Properties / Articles / Documents',draft.propertyDocuments)}${item('11A','Accused persons charge-sheeted',draft.accusedParticulars)}${item('11B','Accused persons not charge-sheeted',draft.unchargedAccused)}${item('12','Particulars of accused persons charge-sheeted',draft.accusedParticulars)}${item('13','Particulars of accused persons not charge-sheeted',draft.unchargedAccused)}${item('14','Witnesses to be examined',draft.witnessList)}${item('15','Action in false case',draft.falseCaseAction)}${item('16','Result of Laboratory Analysis',draft.laboratoryResult)}<p><b>17. Brief facts of the case:</b></p><p class="justify">${_e(draft.briefFacts)}</p>${item('Dispatch','Despatched at / date / time',draft.dispatchDetails)}<table class="no-border" style="margin-top:36px"><tr><td>Officer-in-Charge<br/><br/>${_e(officer.policeStation)}</td><td class="right">Signature of Investigating Officer<br/><br/>(${_e(officer.name)})<br/>${_e(officer.rank)}</td></tr></table>''';
+    return _docBytes(_page('IF-5',html));
+  }
+
 }

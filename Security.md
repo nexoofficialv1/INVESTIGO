@@ -1,51 +1,45 @@
 # INVESTIGO Security
 
-## Security objective
-Protect sensitive investigation and personal data while keeping the first release usable offline.
+## First-release principles
+- Offline-first operation
+- No automatic upload of case, UD or NCR data
+- No public AI transmission
+- Minimum Android permissions
+- Officer approval before final document generation
 
-## Current posture
-- Primary case work is local/offline.
-- Smart drafting is rule-based and local.
-- No online AI is required.
-- Optional backend code is experimental and must remain disabled unless explicitly configured and reviewed.
+## Sensitive information
+Names, addresses, phone numbers, medical facts, witness statements and investigation narratives are sensitive. Logs must not print full record payloads.
 
-## Mandatory controls before production release
-- App-level authentication or device-bound access control.
-- Encrypted local database and encrypted backups.
-- Automatic screen lock after inactivity.
-- Role/permission model if multiple users are introduced.
-- Audit events for create, edit, approve, export, delete, restore and migration.
-- Release signing keys stored outside the repository and CI logs.
-- Secure file sharing using temporary files and clear user confirmation.
-- No secrets, tokens, passwords, private keys or live case data in Git.
+## Storage
+Current local storage is suitable for testing and controlled deployment, not yet certified for unrestricted production use. Before public deployment add:
+- encrypted local database or encrypted record payloads
+- app lock/PIN or device-biometric gate
+- secure backup with user-controlled export
+- audit log for create/edit/final/export events
+- retention and deletion controls
 
-## Data minimisation
-- Collect only fields required for investigation/document generation.
-- Avoid duplicating full personal data across records when a case/entity ID is sufficient.
-- Do not include sensitive data in analytics or crash telemetry.
+## Export
+PDF/DOC files may contain sensitive data. The application must warn before sharing and use temporary files that can be removed after export.
 
-## Network policy
-The first market release should work without network access. If a network feature is enabled later:
-- TLS is mandatory.
-- Certificate/domain validation is mandatory.
-- API keys must be server-side or user-supplied securely.
-- Requests must be authenticated and authorised.
-- Sensitive fields require masking or approved end-to-end protection.
-- Offline data must not auto-upload without clear configuration.
+## Backend
+Deferred. Future server communication must use TLS, short-lived tokens, role-based access and server-side audit records. API secrets must remain on the server.
 
-## Documents and exports
-- Exported PDF/DOC files contain sensitive data and must show a warning before sharing.
-- Temporary export files should be deleted when no longer needed.
-- Preview must not silently upload files.
+## Sketch map privacy
+Sketch maps and landmark labels are stored locally under the Regular Case domain. They are not uploaded by the offline assistant.
 
-## Threats tracked
-- Lost/unlocked phone.
-- Unauthorised export/share.
-- Corrupt or tampered backup.
-- Embedded API secret.
-- Accidental online transmission.
-- Stale data after restore/migration.
-- Unapproved generated narrative being treated as fact.
+## Final-document separation
 
-## Change rule
-Any permission, dependency, network call, storage method, export mechanism, authentication, logging, or encryption change must update this file.
+Final CD, Charge Sheet and IF-5 share regular-case facts but retain separate
+approval states. UD and NCR data are excluded by type and storage boundary.
+This reduces accidental cross-case disclosure and prevents an NCR/UD record
+from being inserted into a regular-case prosecution document.
+
+## Final document approval
+Approval is explicit and local to one document. Validation runs before approval. Export does not silently approve a draft. UD/NCR records are not queried while building Regular Case final documents.
+
+## Final-document approval
+Final CD, Charge Sheet and IF-5 approvals remain independent. Export does not imply approval, and draft metadata remains local.
+
+
+## v1.7.6
+The Release Center reads static feature metadata only and does not read, transmit or modify case data.

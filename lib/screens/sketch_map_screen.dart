@@ -300,11 +300,23 @@ class _SketchMapScreenState extends State<SketchMapScreen> {
   Widget _toolbar() {
     final items = [
       _SketchTool(SketchObjectType.house, 'House'),
+      _SketchTool(SketchObjectType.shop, 'Shop'),
+      _SketchTool(SketchObjectType.gumti, 'Gumti'),
+      _SketchTool(SketchObjectType.school, 'School'),
+      _SketchTool(SketchObjectType.hospital, 'Hospital'),
+      _SketchTool(SketchObjectType.office, 'Office'),
       _SketchTool(SketchObjectType.pond, 'Pond'),
       _SketchTool(SketchObjectType.tree, 'Tree'),
-      _SketchTool(SketchObjectType.shop, 'Shop'),
-      _SketchTool(SketchObjectType.road, 'Road ↔/↕'),
       _SketchTool(SketchObjectType.field, 'Field'),
+      _SketchTool(SketchObjectType.vacantLand, 'Vacant Land'),
+      _SketchTool(SketchObjectType.road, 'Road'),
+      _SketchTool(SketchObjectType.canal, 'Canal'),
+      _SketchTool(SketchObjectType.river, 'River'),
+      _SketchTool(SketchObjectType.railway, 'Railway'),
+      _SketchTool(SketchObjectType.tower, 'Tower'),
+      _SketchTool(SketchObjectType.lampPost, 'Lamp Post'),
+      _SketchTool(SketchObjectType.electricPole, 'Electric Pole'),
+      _SketchTool(SketchObjectType.gate, 'Gate'),
       _SketchTool(SketchObjectType.po, 'PO'),
       _SketchTool(SketchObjectType.arrow, 'North'),
     ];
@@ -490,7 +502,7 @@ class _SketchMapScreenState extends State<SketchMapScreen> {
                 Expanded(child: OutlinedButton(onPressed: () => setState(() => _heightEdit = (_heightEdit + .03).clamp(.05, .65).toDouble()), child: const Text('Height +'))),
               ],
             ),
-            if (obj.type == SketchObjectType.road || obj.type == SketchObjectType.arrow) ...[
+            ...[
               const SizedBox(height: 8),
               Text('Rotation: ${_rotationEdit.round()}°', style: const TextStyle(fontWeight: FontWeight.w800)),
               Slider(
@@ -660,6 +672,56 @@ class _MapSymbolPainter extends CustomPainter {
           final x = size.width * (.06 + i * .17);
           canvas.drawLine(Offset(x, size.height * .12), Offset(x, size.height * .88), line);
         }
+        break;
+      case SketchObjectType.tower:
+        final p = Paint()..color = Colors.black87..style = PaintingStyle.stroke..strokeWidth = 2;
+        canvas.drawLine(Offset(size.width * .5, size.height * .08), Offset(size.width * .25, size.height * .88), p);
+        canvas.drawLine(Offset(size.width * .5, size.height * .08), Offset(size.width * .75, size.height * .88), p);
+        canvas.drawLine(Offset(size.width * .30, size.height * .68), Offset(size.width * .70, size.height * .68), p);
+        canvas.drawLine(Offset(size.width * .36, size.height * .48), Offset(size.width * .64, size.height * .48), p);
+        canvas.drawLine(Offset(size.width * .42, size.height * .28), Offset(size.width * .58, size.height * .28), p);
+        break;
+      case SketchObjectType.lampPost:
+      case SketchObjectType.electricPole:
+        final p = Paint()..color = Colors.black87..style = PaintingStyle.stroke..strokeWidth = 3;
+        canvas.drawLine(Offset(size.width * .5, size.height * .12), Offset(size.width * .5, size.height * .88), p);
+        canvas.drawLine(Offset(size.width * .28, size.height * .20), Offset(size.width * .72, size.height * .20), p);
+        if (type == SketchObjectType.lampPost) canvas.drawCircle(Offset(size.width * .72, size.height * .26), size.shortestSide * .10, border);
+        break;
+      case SketchObjectType.gumti:
+      case SketchObjectType.school:
+      case SketchObjectType.hospital:
+      case SketchObjectType.office:
+        final r = Rect.fromLTWH(size.width * .10, size.height * .18, size.width * .80, size.height * .68);
+        canvas.drawRect(r, Paint()..color = const Color(0xFFECEFF1));
+        canvas.drawRect(r, border);
+        canvas.drawRect(Rect.fromLTWH(size.width * .42, size.height * .56, size.width * .16, size.height * .30), border);
+        break;
+      case SketchObjectType.vacantLand:
+        final r = Rect.fromLTWH(size.width * .06, size.height * .10, size.width * .88, size.height * .78);
+        canvas.drawRect(r, Paint()..color = const Color(0xFFF5F5F5));
+        canvas.drawRect(r, border);
+        canvas.drawLine(r.topLeft, r.bottomRight, border);
+        canvas.drawLine(r.topRight, r.bottomLeft, border);
+        break;
+      case SketchObjectType.gate:
+        final p = Paint()..color = Colors.black87..style = PaintingStyle.stroke..strokeWidth = 2;
+        canvas.drawLine(Offset(size.width * .18, size.height * .12), Offset(size.width * .18, size.height * .88), p);
+        canvas.drawLine(Offset(size.width * .82, size.height * .12), Offset(size.width * .82, size.height * .88), p);
+        canvas.drawLine(Offset(size.width * .18, size.height * .34), Offset(size.width * .82, size.height * .34), p);
+        canvas.drawLine(Offset(size.width * .18, size.height * .66), Offset(size.width * .82, size.height * .66), p);
+        break;
+      case SketchObjectType.canal:
+      case SketchObjectType.river:
+        final water = Paint()..color = const Color(0xFF81D4FA)..style = PaintingStyle.fill;
+        final r = RRect.fromRectAndRadius(Rect.fromLTWH(0, size.height * .20, size.width, size.height * .60), const Radius.circular(8));
+        canvas.drawRRect(r, water); canvas.drawRRect(r, border);
+        break;
+      case SketchObjectType.railway:
+        final p = Paint()..color = Colors.black87..style = PaintingStyle.stroke..strokeWidth = 2;
+        canvas.drawLine(Offset(0, size.height * .30), Offset(size.width, size.height * .30), p);
+        canvas.drawLine(Offset(0, size.height * .70), Offset(size.width, size.height * .70), p);
+        for (double x=0; x<size.width; x+=size.width/8) canvas.drawLine(Offset(x, size.height * .22), Offset(x, size.height * .78), p);
         break;
       case SketchObjectType.po:
         canvas.drawRect(Rect.fromLTWH(size.width * .12, size.height * .18, size.width * .76, size.height * .64), Paint()..color = const Color(0xFFFFEBEE));

@@ -14,6 +14,8 @@ import '../models/form_notice.dart';
 import '../models/sketch_map.dart';
 import '../models/ud_case.dart';
 import '../models/ncr_report.dart';
+import '../models/final_case_documents.dart';
+import 'official_template_spec.dart';
 
 class PdfService {
   String _t(String bn, String en) => L10n.t(bn, en);
@@ -1223,6 +1225,26 @@ class PdfService {
           <path d="M24 10 V70 M40 10 V70 M56 10 V70 M72 10 V70" stroke="#7CB342" stroke-width="1.5"/>
           <path d="M8 30 H92 M8 50 H92" stroke="#AED581" stroke-width="1"/>
         </svg>''';
+      case SketchObjectType.tower:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><path d="M35 5 L12 92 M35 5 L58 92 M20 65 H50 M25 45 H45 M30 25 H40" stroke="#111" stroke-width="3" fill="none"/></svg>''';
+      case SketchObjectType.lampPost:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><path d="M35 92 V15 H58" stroke="#111" stroke-width="5" fill="none"/><circle cx="58" cy="24" r="10" fill="#FFF9C4" stroke="#111" stroke-width="2"/></svg>''';
+      case SketchObjectType.electricPole:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><path d="M35 92 V12 M12 24 H58 M18 34 H52" stroke="#111" stroke-width="4" fill="none"/><circle cx="18" cy="34" r="3"/><circle cx="52" cy="34" r="3"/></svg>''';
+      case SketchObjectType.gumti:
+      case SketchObjectType.school:
+      case SketchObjectType.hospital:
+      case SketchObjectType.office:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80"><rect x="10" y="16" width="80" height="58" fill="#ECEFF1" stroke="#111" stroke-width="2"/><rect x="42" y="48" width="16" height="26" fill="#FFF" stroke="#111" stroke-width="2"/><rect x="20" y="28" width="18" height="14" fill="#FFF" stroke="#111"/><rect x="62" y="28" width="18" height="14" fill="#FFF" stroke="#111"/></svg>''';
+      case SketchObjectType.vacantLand:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80"><rect x="6" y="8" width="88" height="64" fill="#F5F5F5" stroke="#111" stroke-width="2" stroke-dasharray="5 3"/><path d="M8 10 L92 70 M92 10 L8 70" stroke="#9E9E9E" stroke-width="1.5"/></svg>''';
+      case SketchObjectType.gate:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80"><path d="M18 8 V72 M82 8 V72 M18 28 H82 M18 54 H82 M50 28 V72" stroke="#111" stroke-width="3" fill="none"/></svg>''';
+      case SketchObjectType.canal:
+      case SketchObjectType.river:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50"><rect x="2" y="8" width="176" height="34" rx="12" fill="#81D4FA" stroke="#0277BD" stroke-width="2"/><path d="M15 25 C35 15 55 35 75 25 C95 15 115 35 135 25 C150 18 160 20 170 25" stroke="#0288D1" stroke-width="2" fill="none"/></svg>''';
+      case SketchObjectType.railway:
+        return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50"><path d="M2 14 H178 M2 36 H178" stroke="#111" stroke-width="3"/><path d="M12 7 V43 M34 7 V43 M56 7 V43 M78 7 V43 M100 7 V43 M122 7 V43 M144 7 V43 M166 7 V43" stroke="#555" stroke-width="2"/></svg>''';
       case SketchObjectType.po:
         return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70">
           <rect x="10" y="10" width="80" height="50" fill="#FFEBEE" stroke="#B71C1C" stroke-width="4"/>
@@ -1428,75 +1450,121 @@ extension UdSupportingReportsPdfService on PdfService {
     final doc = pw.Document(theme: await _pdfTheme());
     final bn = AppLanguageController.instance.isBengali;
     String t(String b, String e) => bn ? b : e;
-    pw.TextStyle normal([double size = 11]) => pw.TextStyle(fontSize: size);
-    pw.TextStyle bold([double size = 11]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
-    pw.Widget line(String label, String value, {double height = 22}) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 5),
-          child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-            pw.Text(label, style: bold()),
-            pw.SizedBox(width: 4),
-            pw.Expanded(
-              child: pw.Container(
-                constraints: pw.BoxConstraints(minHeight: height),
-                decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(width: .45)),
-                ),
-                child: pw.Text(value, style: normal()),
-              ),
-            ),
-          ]),
+    pw.TextStyle normal([double size = 8.2]) => pw.TextStyle(fontSize: size);
+    pw.TextStyle bold([double size = 8.2]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
+
+    pw.Widget box({required pw.Widget child, double? height, pw.Alignment alignment = pw.Alignment.center}) => pw.Container(
+          height: height,
+          alignment: alignment,
+          padding: const pw.EdgeInsets.all(3),
+          decoration: pw.BoxDecoration(border: pw.Border.all(width: .65)),
+          child: child,
         );
 
-    doc.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(42, 32, 42, 34),
-        build: (_) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-          children: [
-            pw.Center(child: pw.Text(t('পশ্চিমবঙ্গ সরকার', 'GOVERNMENT OF WEST BENGAL'), style: bold(12))),
-            pw.Center(child: pw.Text(t('পুলিশ বিভাগ', 'POLICE DEPARTMENT'), style: bold(12))),
-            pw.SizedBox(height: 8),
-            pw.Center(child: pw.Text(t('মৃতদেহ চালান', 'DEAD BODY CHALLAN'), style: bold(16))),
-            pw.SizedBox(height: 18),
-            line(t('UD মামলা নং:', 'UD Case No.:'), ud.udNo),
-            line(t('থানা:', 'Police Station:'), ud.policeStation),
-            line(t('জেলা:', 'District:'), ud.district),
-            line(t('জিডিই নং ও তারিখ:', 'GDE No. & Date:'), ud.gdeNo),
-            line(t('মৃত ব্যক্তির নাম:', 'Name of deceased:'), ud.deceasedName),
-            line(t('বয়স/লিঙ্গ:', 'Age/Sex:'), '${ud.deceasedAge} / ${ud.deceasedSex}'),
-            line(t('ঠিকানা:', 'Address:'), ud.deceasedAddress, height: 34),
-            line(t('মৃতদেহ উদ্ধারের স্থান:', 'Place where body was found:'), ud.placeFound, height: 34),
-            line(t('উদ্ধারের তারিখ ও সময়:', 'Date & time found:'), '${ud.deadBodyFoundDate} ${ud.deadBodyFoundTime}'),
-            line(t('সনাক্তকারী ব্যক্তির নাম ও ঠিকানা:', 'Identified by:'), '${ud.identifiedByName}, ${ud.identifiedByAddress}', height: 34),
-            line(t('সংক্ষিপ্ত ঘটনা:', 'Brief facts:'), ud.briefFacts, height: 68),
-            pw.SizedBox(height: 12),
-            pw.Text(
-              t(
-                'উপরোক্ত মৃতদেহটি ময়নাতদন্তের জন্য প্রেরণ করা হলো। মৃতদেহের পরিচয়, সিল ও সংশ্লিষ্ট কাগজপত্র পরীক্ষা করে গ্রহণ করার অনুরোধ করা হচ্ছে।',
-                'The above dead body is forwarded for post-mortem examination. Kindly receive the body after verifying identity, seal and accompanying papers.',
-              ),
-              style: normal(),
-              textAlign: pw.TextAlign.justify,
+    pw.Widget textBox(String text, {double? height, bool isBold = false, pw.Alignment alignment = pw.Alignment.center, double size = 8.2}) =>
+        box(child: pw.Text(text, style: isBold ? bold(size) : normal(size), textAlign: pw.TextAlign.center), height: height, alignment: alignment);
+
+    pw.Widget verticalBox(String text, {double? height, bool isBold = false, double size = 8.1}) => box(
+          height: height,
+          child: pw.Transform.rotate(
+            angle: -math.pi / 2,
+            child: pw.Container(
+              width: (height ?? 280) - 12,
+              alignment: pw.Alignment.center,
+              child: pw.Text(text, style: isBold ? bold(size) : normal(size), textAlign: pw.TextAlign.center),
             ),
-            pw.Spacer(),
-            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text(t('মৃতদেহ বহনকারীর স্বাক্ষর', 'Signature of body carrier'), style: normal()),
-                pw.SizedBox(height: 28),
-                pw.Text('________________________', style: normal()),
+          ),
+        );
+
+    final deceasedIdentity = [
+      ud.deceasedName,
+      '(${ud.religionRaceCommunity.isEmpty ? t('ধর্ম', 'Religion') : ud.religionRaceCommunity}, ${ud.deceasedSex}, ${t('বয়স', 'Age')}- ${ud.deceasedAge})',
+      ud.deceasedAddress,
+    ].where((e) => e.trim().isNotEmpty).join(', ');
+    final dispatchDetails = [
+      ud.dateTime,
+      ud.distanceFromPs.isEmpty ? '' : '${t('দূরত্ব', 'Distance')} ${ud.distanceFromPs}',
+    ].where((e) => e.trim().isNotEmpty).join(', ');
+    final identifyingOfficer = ud.identifiedByName.trim().isNotEmpty
+        ? '${ud.identifiedByName}${ud.identifiedByAddress.trim().isEmpty ? '' : ', ${ud.identifiedByAddress}'}'
+        : '${officer.rank} ${officer.name}, ${officer.policeStation}';
+    final bodyMarks = [ud.teeth, ud.mole, ud.tattoo, ud.otherFeatures].where((e) => e.trim().isNotEmpty).join('; ');
+    final remarks = [
+      ud.dress.trim().isEmpty ? '' : '${t('পরিধেয় পোশাক', 'Wearing apparel')}: ${ud.dress}',
+      ud.articlesAtPo.trim().isEmpty ? '' : '${t('প্রেরিত সামগ্রী', 'Articles sent')}: ${ud.articlesAtPo}',
+      ud.remarks,
+    ].where((e) => e.trim().isNotEmpty).join('\n');
+    final forwardNarrative = bn
+        ? '${ud.deceasedName} নামীয় মৃত ব্যক্তির মৃতদেহটি, ${ud.deceasedAddress}, ময়নাতদন্তের মাধ্যমে মৃত্যুর প্রকৃত কারণ নির্ণয়ের জন্য ${ud.placeFound.isEmpty ? 'পুলিশ মর্গে' : ud.placeFound} প্রেরণ করা হলো। মৃতদেহটি $identifyingOfficer দ্বারা সনাক্ত করা হয়েছে এবং সংশ্লিষ্ট কাগজপত্রসহ পাঠানো হলো।'
+        : 'Forwarded the dead body of the deceased namely ${ud.deceasedName}, (${ud.religionRaceCommunity.isEmpty ? 'Religion' : ud.religionRaceCommunity}, ${ud.deceasedSex}, Age- ${ud.deceasedAge}), of ${ud.deceasedAddress} to ${ud.placeFound.isEmpty ? 'the Police Morgue' : ud.placeFound} with all connected papers for holding Post Mortem Examination over the dead body of the deceased to ascertain the actual cause of death.';
+
+    const headerHeight = 84.0;
+    const bodyHeight = 332.0;
+    const rightTopHeight = 178.0;
+    final leftWidths = <int, pw.TableColumnWidth>{
+      0: const pw.FlexColumnWidth(1.18), 1: const pw.FlexColumnWidth(.78), 2: const pw.FlexColumnWidth(1.05), 3: const pw.FlexColumnWidth(.98), 4: const pw.FlexColumnWidth(1.35),
+    };
+    final rightWidths = <int, pw.TableColumnWidth>{
+      0: const pw.FlexColumnWidth(1.2), 1: const pw.FlexColumnWidth(1.35), 2: const pw.FlexColumnWidth(.9), 3: const pw.FlexColumnWidth(.95), 4: const pw.FlexColumnWidth(1.75),
+    };
+
+    doc.addPage(pw.Page(
+      pageFormat: PdfPageFormat.a4.landscape,
+      margin: const pw.EdgeInsets.fromLTRB(28, 20, 28, 20),
+      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+        pw.Text(t('পশ্চিমবঙ্গ ফর্ম নং- ৫৩৭১', 'West Bengal Form No- 5371'), style: normal(9.5)),
+        pw.SizedBox(height: 8),
+        pw.Center(child: pw.Text('${t('রেফারেন্স', 'Ref')}: ${ud.policeStation} U/D Case No: ${ud.udNo}, ${t('তারিখ', 'Date')}: ${ud.dateTime}', style: bold(10.2))),
+        pw.SizedBox(height: 5),
+        pw.Center(child: pw.Text('(P.R.B Form No-54 vide Rule-252)', style: normal(9.6))),
+        pw.SizedBox(height: 4),
+        pw.Table(border: pw.TableBorder.all(width: .65), columnWidths: const {
+          0: pw.FlexColumnWidth(1.18), 1: pw.FlexColumnWidth(.78), 2: pw.FlexColumnWidth(1.05), 3: pw.FlexColumnWidth(.98), 4: pw.FlexColumnWidth(1.35),
+          5: pw.FlexColumnWidth(1.2), 6: pw.FlexColumnWidth(1.35), 7: pw.FlexColumnWidth(.9), 8: pw.FlexColumnWidth(.95), 9: pw.FlexColumnWidth(1.75),
+        }, children: [pw.TableRow(children: [
+          textBox(t('মৃত ব্যক্তির নাম ও জাতি', 'Name and caste of deceased'), height: headerHeight, isBold: true),
+          textBox(t('লিঙ্গ ও বয়স', 'Sex and Age'), height: headerHeight, isBold: true),
+          textBox(t('বাসস্থান', 'Residence'), height: headerHeight, isBold: true),
+          textBox(t('মৃতদেহ যেখানে পাওয়া যায়', 'Where dead body was found'), height: headerHeight, isBold: true),
+          textBox(t('প্রেরণের তারিখ-সময় ও ময়নাতদন্ত স্থান থেকে দূরত্ব', 'Date and hours of dispatch and distance from place of postmortem'), height: headerHeight, isBold: true),
+          textBox(t('প্রেরণের মাধ্যম', 'Means of Dispatch'), height: headerHeight, isBold: true),
+          textBox(t('সনাক্তকারী পুলিশ অফিসারের নাম', 'Name of identifying Police officer'), height: headerHeight, isBold: true),
+          textBox(t('মৃতদেহের চিহ্ন', 'Marks on the body'), height: headerHeight, isBold: true),
+          textBox(t('যতদূর জানা যায় মৃত্যুর কারণ', 'Cause of death as far as known'), height: headerHeight, isBold: true),
+          textBox(t('মন্তব্য—মৃতদেহের সঙ্গে পাঠানো পোশাক/সামগ্রী', 'Remarks, Mention what clothes articles were sent herewith the body'), height: headerHeight, isBold: true),
+        ])]),
+        pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+          pw.Expanded(flex: 53, child: pw.Table(border: pw.TableBorder.all(width: .65), columnWidths: leftWidths, children: [pw.TableRow(children: [
+            verticalBox(deceasedIdentity, height: bodyHeight),
+            verticalBox('${ud.deceasedSex}, ${t('বয়স', 'Age')}- ${ud.deceasedAge}', height: bodyHeight),
+            verticalBox(ud.deceasedAddress, height: bodyHeight),
+            verticalBox(ud.placeFound, height: bodyHeight),
+            verticalBox(dispatchDetails, height: bodyHeight),
+          ])])),
+          pw.Expanded(flex: 47, child: pw.Column(children: [
+            pw.Table(border: pw.TableBorder.all(width: .65), columnWidths: rightWidths, children: [pw.TableRow(children: [
+              verticalBox(ud.directionFromPs.isEmpty ? t('সরকারি/ভাড়া গাড়ি', 'By Government/Hired vehicle') : ud.directionFromPs, height: rightTopHeight),
+              verticalBox(identifyingOfficer, height: rightTopHeight),
+              verticalBox(bodyMarks.isEmpty ? t('সুরতহাল রিপোর্ট অনুযায়ী', 'As per surathal report') : bodyMarks, height: rightTopHeight),
+              verticalBox(ud.probableCauseOfDeath.isEmpty ? t('সুরতহাল রিপোর্ট অনুযায়ী', 'As per surathal report') : ud.probableCauseOfDeath, height: rightTopHeight),
+              textBox(remarks, height: rightTopHeight, alignment: pw.Alignment.topLeft, size: 8.2),
+            ])]),
+            box(height: bodyHeight - rightTopHeight, alignment: pw.Alignment.topLeft, child: pw.Padding(
+              padding: const pw.EdgeInsets.all(7),
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+                pw.Text(forwardNarrative, style: normal(9.1), textAlign: pw.TextAlign.justify),
+                pw.Spacer(),
+                pw.Center(child: pw.Text(t('পেশ করা হলো –', 'Submitted –'), style: normal(9.2))),
+                pw.SizedBox(height: 18),
+                pw.Center(child: pw.Text('(${officer.name})', style: bold(9.2))),
+                pw.Center(child: pw.Text('${officer.rank}, ${officer.policeStation}', style: normal(9.2))),
+                pw.Center(child: pw.Text('${t('তারিখ', 'Date')}: ${ud.dateTime}', style: normal(9.2))),
               ]),
-              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
-                pw.Text(t('তদন্তকারী অফিসারের স্বাক্ষর', 'Signature of Investigating Officer'), style: normal()),
-                pw.SizedBox(height: 24),
-                pw.Text('${officer.rank} ${officer.name}', style: bold()),
-                pw.Text(officer.policeStation, style: normal()),
-              ]),
-            ]),
-          ],
-        ),
-      ),
-    );
+            )),
+          ])),
+        ]),
+      ]),
+    ));
     return doc.save();
   }
 
@@ -1507,77 +1575,64 @@ extension UdSupportingReportsPdfService on PdfService {
     final doc = pw.Document(theme: await _pdfTheme());
     final bn = AppLanguageController.instance.isBengali;
     String t(String b, String e) => bn ? b : e;
-    pw.TextStyle normal([double size = 11]) => pw.TextStyle(fontSize: size);
-    pw.TextStyle bold([double size = 11]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
-    pw.Widget row(String label, String value) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 7),
-          child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-            pw.SizedBox(width: 170, child: pw.Text(label, style: bold())),
-            pw.Expanded(child: pw.Text(value, style: normal())),
-          ]),
-        );
-
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(44, 34, 44, 36),
-        build: (_) => [
-          pw.Center(child: pw.Text(t('পশ্চিমবঙ্গ সরকার', 'GOVERNMENT OF WEST BENGAL'), style: bold(12))),
-          pw.Center(child: pw.Text(t('পুলিশ বিভাগ', 'POLICE DEPARTMENT'), style: bold(12))),
-          pw.SizedBox(height: 6),
-          pw.Center(child: pw.Text(t('UD মামলার চূড়ান্ত প্রতিবেদন', 'FINAL REPORT OF UD CASE'), style: bold(16))),
-          pw.SizedBox(height: 20),
-          row(t('UD মামলা নং', 'UD Case No.'), ud.udNo),
-          row(t('থানা', 'Police Station'), ud.policeStation),
-          row(t('জেলা', 'District'), ud.district),
-          row(t('জিডিই নং ও তারিখ', 'GDE No. & Date'), ud.gdeNo),
-          row(t('মৃত ব্যক্তির নাম', 'Name of deceased'), ud.deceasedName),
-          row(t('বয়স/লিঙ্গ', 'Age/Sex'), '${ud.deceasedAge} / ${ud.deceasedSex}'),
-          row(t('ঠিকানা', 'Address'), ud.deceasedAddress),
-          row(t('মৃতদেহ উদ্ধারের স্থান', 'Place found'), ud.placeFound),
-          row(t('সম্ভাব্য মৃত্যুর কারণ', 'Probable cause of death'), ud.probableCauseOfDeath),
-          pw.SizedBox(height: 12),
-          pw.Text(t('তদন্তের সংক্ষিপ্ত বিবরণ:', 'Brief facts of enquiry:'), style: bold()),
-          pw.SizedBox(height: 6),
-          pw.Container(
-            width: double.infinity,
-            constraints: const pw.BoxConstraints(minHeight: 120),
-            padding: const pw.EdgeInsets.all(8),
-            decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)),
-            child: pw.Text(ud.briefFacts, style: normal(), textAlign: pw.TextAlign.justify),
-          ),
-          pw.SizedBox(height: 14),
-          pw.Text(t('তদন্তে প্রাপ্ত মতামত/উপসংহার:', 'Opinion / conclusion of enquiry:'), style: bold()),
-          pw.SizedBox(height: 6),
-          pw.Container(
-            width: double.infinity,
-            constraints: const pw.BoxConstraints(minHeight: 100),
-            padding: const pw.EdgeInsets.all(8),
-            decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)),
-            child: pw.Text(ud.remarks.isEmpty ? ud.probableCauseOfDeath : ud.remarks, style: normal(), textAlign: pw.TextAlign.justify),
-          ),
-          pw.SizedBox(height: 18),
-          pw.Text(
-            t(
-              'উপরোক্ত তথ্য ও তদন্তে প্রাপ্ত উপাদানের ভিত্তিতে UD মামলাটি চূড়ান্ত নিষ্পত্তির জন্য পেশ করা হলো।',
-              'On the basis of the above facts and materials collected during enquiry, the UD case is submitted for final disposal.',
-            ),
-            style: normal(),
-            textAlign: pw.TextAlign.justify,
-          ),
-          pw.SizedBox(height: 46),
-          pw.Align(
-            alignment: pw.Alignment.centerRight,
-            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
-              pw.Text(t('পেশ করা হলো', 'Submitted'), style: normal()),
-              pw.SizedBox(height: 24),
-              pw.Text('${officer.rank} ${officer.name}', style: bold()),
-              pw.Text(officer.policeStation, style: normal()),
-            ]),
-          ),
-        ],
-      ),
+    pw.TextStyle normal([double size = 10.5]) => pw.TextStyle(fontSize: size);
+    pw.TextStyle bold([double size = 10.5]) => pw.TextStyle(fontSize: size, fontWeight: pw.FontWeight.bold);
+    pw.Widget numbered(int no, String label, String value) => pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 6),
+      child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+        pw.SizedBox(width: 22, child: pw.Text('$no.', style: normal())),
+        pw.SizedBox(width: 300, child: pw.Text(label, style: normal())),
+        pw.Text(': ', style: normal()),
+        pw.Expanded(child: pw.Text(value, style: normal())),
+      ]),
     );
+    final spotTime = [ud.deadBodyFoundDate, ud.deadBodyFoundTime].where((e) => e.trim().isNotEmpty).join(' at ');
+    final narrative = ud.briefFacts.trim().isNotEmpty
+        ? ud.briefFacts.trim()
+        : t(
+            'প্রাপ্ত তথ্যের ভিত্তিতে উপরোক্ত U/D মামলা রুজু করে তদন্ত গ্রহণ করা হয়। ঘটনাস্থল পরিদর্শন, মৃতদেহ সনাক্তকরণ, সুরতহাল প্রস্তুত এবং ময়নাতদন্তের জন্য মৃতদেহ প্রেরণ করা হয়। ময়নাতদন্তের মতামত ও তদন্তে সংগৃহীত তথ্যের ভিত্তিতে মৃত্যুর কারণ ${ud.probableCauseOfDeath.isEmpty ? 'নির্ধারিত হয়েছে' : ud.probableCauseOfDeath}।',
+            'On receipt of the information the above U/D case was started and enquiry was taken up. The place was visited, the dead body was identified, inquest was held and the body was sent for post-mortem examination. On the basis of the post-mortem opinion and materials collected during enquiry, the cause of death was found to be ${ud.probableCauseOfDeath.isEmpty ? 'ascertained during enquiry' : ud.probableCauseOfDeath}.',
+          );
+    final conclusion = ud.remarks.trim().isNotEmpty
+        ? ud.remarks.trim()
+        : t(
+            'প্রাথমিক তদন্ত ও ময়নাতদন্তের মতামতে কোনো অপরাধমূলক কার্যকলাপের প্রমাণ পাওয়া যায়নি। ভবিষ্যতে কোনো অভিযোগ বা নতুন তথ্য পাওয়া গেলে মামলাটি পুনরায় খোলার শর্তে U/D মামলাটি নথিভুক্ত করার প্রার্থনা করা হলো।',
+            'From the preliminary enquiry and the post-mortem opinion no foul play could be detected. The U/D case is therefore submitted for filing, subject to reopening if any complaint or fresh clue is received in future.',
+          );
+
+    doc.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.fromLTRB(42, 38, 42, 36),
+      build: (_) => [
+        pw.Text(t('পশ্চিমবঙ্গ ফর্ম নং ৫৩৭০', 'West Bengal form No. 5370'), style: bold(10.8)),
+        pw.SizedBox(height: 14),
+        pw.Center(child: pw.Text(
+          t('অস্বাভাবিক মৃত্যুর নথিভুক্ত মামলার চূড়ান্ত প্রতিবেদন ম্যাজিস্ট্রেটের নিকট প্রেরণ', 'FINAL REPORT OF A REPORTED CASE OF UNNATURAL DEATH SENT TO THE MAGISTRATE'),
+          style: bold(13), textAlign: pw.TextAlign.center,
+        )),
+        pw.Center(child: pw.Text(t('(BNSS-এর প্রযোজ্য ধারা অনুযায়ী)', 'UNDER THE APPLICABLE SECTION OF BNSS'), style: bold(11.5))),
+        pw.Center(child: pw.Text('(P.R.B. Form No.- 53 Vide Rule 276)', style: bold(10.5))),
+        pw.SizedBox(height: 18),
+        numbered(1, t('থানা, প্রথম তথ্যের নম্বর ও তারিখ', 'Station, Number and date of first information'), '${ud.policeStation} U/D Case No. ${ud.udNo}, Dated- ${ud.dateTime}'),
+        numbered(2, t('মৃত ব্যক্তির নাম', 'Name of the deceased'), '${ud.deceasedName} (${ud.deceasedSex}, Age- ${ud.deceasedAge})'),
+        numbered(3, t('ঘটনাস্থলে যাওয়ার তারিখ ও সময়', 'Date and hour of going to the spot'), spotTime),
+        numbered(4, t('চূড়ান্ত প্রতিবেদন প্রেরণের তারিখ ও সময়', 'Date and hour of dispatch of the final report'), ud.updatedAt.toIso8601String().replaceFirst('T', ' ').split('.').first),
+        pw.SizedBox(height: 36),
+        pw.Center(child: pw.Text('${t('অফিসার-ইন-চার্জ', 'Officer-In-Charge of')} ${ud.policeStation}', style: bold(11.2), decoration: pw.TextDecoration.underline)),
+        pw.SizedBox(height: 12),
+        pw.Paragraph(text: narrative, style: normal(10.7), textAlign: pw.TextAlign.justify, margin: const pw.EdgeInsets.only(bottom: 12)),
+        pw.Paragraph(text: conclusion, style: normal(10.7), textAlign: pw.TextAlign.justify, margin: const pw.EdgeInsets.only(bottom: 12)),
+        pw.Paragraph(text: t('অতএব, উপরোক্ত U/D মামলাটি নথিভুক্ত করে বাধিত করার প্রার্থনা করছি।', 'Therefore, I am praying that this U/D Case may kindly be filed and obliged.'), style: normal(10.7), textAlign: pw.TextAlign.justify),
+        pw.SizedBox(height: 28),
+        pw.Align(alignment: pw.Alignment.centerRight, child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+          pw.Text(t('পেশ করা হলো', 'Submitted'), style: normal(10.5)),
+          pw.SizedBox(height: 24),
+          pw.Text('(${officer.name})', style: normal(10.5)),
+          pw.Text('${officer.rank}, ${officer.policeStation}', style: normal(10.5)),
+          pw.Text('${officer.district}, ${t('তারিখ', 'Dt')}- ${ud.dateTime}', style: normal(10.5)),
+        ])),
+      ],
+    ));
     return doc.save();
   }
 }
@@ -1697,4 +1752,122 @@ extension NcrPdfExport on PdfService {
     final bytes = await buildNcrPdf(officer: officer, report: report);
     await Printing.sharePdf(bytes: bytes, filename: 'NCR_${report.ncrNo.replaceAll('/', '_')}.pdf');
   }
+
+  Future<Uint8List> buildFinalCdPdf({
+    required OfficerProfile officer,
+    required CaseFile caseFile,
+    required FinalCdDraft draft,
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    final ratios = OfficialTemplateSpec.finalCdColumnRatios;
+    doc.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.fromLTRB(22, 18, 22, 20),
+      header: (_) => pw.Column(children: [
+        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+          pw.Text('West Bengal Form No. ${OfficialTemplateSpec.cdFormNo}', style: const pw.TextStyle(fontSize: 8)),
+          pw.Text('B.P. Form No. ${OfficialTemplateSpec.cdBpFormNo}', style: const pw.TextStyle(fontSize: 8)),
+        ]),
+        pw.Center(child: pw.Text('CASE DIARY UNDER SECTION 192 BNSS', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
+        pw.Center(child: pw.Text('(Regulation 264)', style: const pw.TextStyle(fontSize: 8.5))),
+        pw.SizedBox(height: 4),
+        pw.Text('Police Station: ${officer.policeStation}    District: ${officer.district}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('First Information No. ${caseFile.psCaseNo} dated ${caseFile.caseDate} U/S ${caseFile.sections}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('Name of Complainant: ${caseFile.complainantName}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('Case Diary: FINAL', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 4),
+        pw.Table(border: pw.TableBorder.all(width: .55), columnWidths: {
+          0: pw.FlexColumnWidth(ratios[0]), 1: pw.FlexColumnWidth(ratios[1]),
+          2: pw.FlexColumnWidth(ratios[2]), 3: pw.FlexColumnWidth(ratios[3]),
+        }, children: [pw.TableRow(children: [
+          for (final h in const ['No. and hour of entry','Place of entry','Synopsis of entry','Particulars of enquiry'])
+            pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(h, textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+        ])]),
+      ]),
+      build: (_) => [
+        pw.Table(border: pw.TableBorder(left: const pw.BorderSide(width: .55), right: const pw.BorderSide(width: .55), bottom: const pw.BorderSide(width: .55), verticalInside: const pw.BorderSide(width: .55)), columnWidths: {
+          0: pw.FlexColumnWidth(ratios[0]), 1: pw.FlexColumnWidth(ratios[1]),
+          2: pw.FlexColumnWidth(ratios[2]), 3: pw.FlexColumnWidth(ratios[3]),
+        }, children: [pw.TableRow(children: [
+          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('I
+${draft.entryTime}', style: const pw.TextStyle(fontSize: 8.5))),
+          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(draft.entryPlace, style: const pw.TextStyle(fontSize: 8.5))),
+          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(draft.synopsis, style: const pw.TextStyle(fontSize: 8.5))),
+          pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.Text(draft.narrative, textAlign: pw.TextAlign.justify, style: const pw.TextStyle(fontSize: 9.3, lineSpacing: 2)),
+            if (draft.accusedStatus.trim().isNotEmpty) ...[pw.SizedBox(height: 8), pw.Text('Status of accused: ${draft.accusedStatus}', style: const pw.TextStyle(fontSize: 9))],
+            if (draft.witnessList.trim().isNotEmpty) ...[pw.SizedBox(height: 8), pw.Text('Witnesses: ${draft.witnessList}', style: const pw.TextStyle(fontSize: 9))],
+            pw.SizedBox(height: 16),
+            pw.Align(alignment: pw.Alignment.centerRight, child: pw.Column(children: [pw.Text('Submitted'), pw.SizedBox(height: 22), pw.Text('(${officer.name})'), pw.Text('${officer.rank}, ${officer.policeStation}')]))
+          ])),
+        ])]),
+      ],
+    ));
+    return doc.save();
+  }
+
+  Future<Uint8List> buildChargeSheetPdf({
+    required OfficerProfile officer,
+    required CaseFile caseFile,
+    required ChargeSheetDraft draft,
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    pw.Widget row(String no, String label, String value) => pw.Table(border: pw.TableBorder.all(width: .55), columnWidths: const {0: pw.FixedColumnWidth(24), 1: pw.FixedColumnWidth(150), 2: pw.FlexColumnWidth()}, children: [pw.TableRow(children: [
+      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(no, style: const pw.TextStyle(fontSize: 8.5))),
+      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(label, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold))),
+      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(value, style: const pw.TextStyle(fontSize: 8.5))),
+    ])]);
+    doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4, margin: const pw.EdgeInsets.fromLTRB(22, 18, 22, 20), build: (_) => [
+      pw.Center(child: pw.Text('POLICE REPORT / CHARGE SHEET', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold))),
+      pw.Center(child: pw.Text('(Under Section 193 BNSS)', style: const pw.TextStyle(fontSize: 8.5))), pw.SizedBox(height: 7),
+      row('1','In the Court of',draft.courtName),
+      row('2','District / Police Station / Case','${officer.district} / ${officer.policeStation} / ${caseFile.psCaseNo} dated ${caseFile.caseDate}'),
+      row('3','Charge Sheet No. and Date','${draft.chargeSheetNo}  ${draft.chargeSheetDate}'),
+      row('4','Acts and Sections',draft.sections), row('5','Complainant / Informant',caseFile.complainantName),
+      row('6','Particulars and status of accused',draft.accusedParticulars), row('7','Relied documents / property',draft.reliedDocuments),
+      row('8','Witnesses to be examined',draft.witnessList), pw.SizedBox(height: 8),
+      pw.Text('Brief facts of the case', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
+      pw.Container(width: double.infinity, padding: const pw.EdgeInsets.all(7), decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)), child: pw.Text(draft.briefFacts, textAlign: pw.TextAlign.justify, style: const pw.TextStyle(fontSize: 9))),
+      pw.SizedBox(height: 22), pw.Align(alignment: pw.Alignment.centerRight, child: pw.Column(children: [pw.Text('Signature of Investigating Officer'), pw.SizedBox(height: 24), pw.Text('(${officer.name})'), pw.Text('${officer.rank}, ${officer.policeStation}')]))
+    ]));
+    return doc.save();
+  }
+
+  Future<Uint8List> buildIf5Pdf({
+    required OfficerProfile officer,
+    required CaseFile caseFile,
+    required If5Draft draft,
+  }) async {
+    final doc = pw.Document(theme: await _pdfTheme());
+    pw.Widget item(String no, String label, String value) => pw.Padding(padding: const pw.EdgeInsets.only(bottom: 4), child: pw.RichText(text: pw.TextSpan(style: const pw.TextStyle(fontSize: 8.8), children: [pw.TextSpan(text: '$no. $label: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)), pw.TextSpan(text: value)])));
+    doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4, margin: const pw.EdgeInsets.fromLTRB(20, 16, 20, 18), header: (_) => pw.Column(children: [
+      pw.Align(alignment: pw.Alignment.centerLeft, child: pw.Text('P.R.B. 1943. VOL.-II', style: const pw.TextStyle(fontSize: 7.5))),
+      pw.Center(child: pw.Text('W.B.P. FORM NO. ${OfficialTemplateSpec.if5FormNo}  FINAL FORM / FINAL REPORT', style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold))),
+      pw.Center(child: pw.Text('(Under Section 193 BNSS)', style: const pw.TextStyle(fontSize: 8.5))), pw.SizedBox(height: 6),
+    ]), build: (_) => [
+      item('1','IN THE COURT OF',draft.courtName),
+      item('2','District, Police Station, Year, FIR No. and Date','${officer.district}; ${officer.policeStation}; ${caseFile.psCaseNo}; ${caseFile.caseDate}'),
+      item('3','Charge-Sheet / Final Report No. and Date','${draft.chargeSheetNo} ${draft.chargeSheetDate}'),
+      item('4','Acts and Sections',caseFile.sections), item('5','Type of Final Report',draft.finalReportType),
+      item('6','If F.R. unoccurred / false / mistake / non-cognizable / civil nature',''), item('7','Supplementary or Original',draft.originalOrSupplementary),
+      item('8','Name, rank and number of I.O.',draft.investigatingOfficer.isEmpty ? '${officer.name}, ${officer.rank}, ${officer.policeStation}' : draft.investigatingOfficer),
+      item('9','Name of Complainant / Informant',draft.complainant), item('10','Communication of result to complainant',draft.resultCommunication),
+      item('11','Properties / Articles / Documents recovered, seized or relied upon',draft.propertyDocuments),
+      item('11A','Number / particulars of accused persons charge-sheeted',draft.accusedParticulars),
+      item('11B','Number / particulars of accused persons not charge-sheeted',draft.unchargedAccused),
+      item('12','Particulars of accused persons charge-sheeted',draft.accusedParticulars),
+      item('13','Particulars of accused persons not charge-sheeted / suspected',draft.unchargedAccused),
+      item('14','Particulars of witnesses to be examined',draft.witnessList),
+      item('15','Action taken / proposed in false case',draft.falseCaseAction), item('16','Result of Laboratory Analysis',draft.laboratoryResult),
+      pw.SizedBox(height: 5), pw.Text('17. Brief facts of the case:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+      pw.Container(width: double.infinity, padding: const pw.EdgeInsets.all(6), decoration: pw.BoxDecoration(border: pw.Border.all(width: .55)), child: pw.Text(draft.briefFacts, textAlign: pw.TextAlign.justify, style: const pw.TextStyle(fontSize: 8.8))),
+      if (draft.dispatchDetails.trim().isNotEmpty) ...[pw.SizedBox(height: 6), item('Dispatch','Despatched at / date / time',draft.dispatchDetails)],
+      pw.SizedBox(height: 22), pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
+        pw.Column(children: [pw.Text('Officer-in-Charge'), pw.SizedBox(height: 22), pw.Text(officer.policeStation)]),
+        pw.Column(children: [pw.Text('Signature of Investigating Officer'), pw.SizedBox(height: 22), pw.Text('(${officer.name})'), pw.Text(officer.rank)]),
+      ])
+    ]));
+    return doc.save();
+  }
+
 }

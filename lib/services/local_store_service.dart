@@ -13,6 +13,7 @@ import '../models/backend_config.dart';
 import '../models/ud_case.dart';
 import '../models/investigation_action.dart';
 import '../models/ncr_report.dart';
+import '../models/final_case_documents.dart';
 
 class LocalStoreService {
   static const _profileKey = 'officer_profile_v1';
@@ -26,7 +27,71 @@ class LocalStoreService {
   static const _udCasesKey = 'ud_cases_v1';
   static const _investigationActionsKey = 'investigation_actions_v1';
   static const _ncrReportsKey = 'ncr_reports_v1';
+  static const _finalCdDraftsKey = 'final_cd_drafts_v1';
+  static const _chargeSheetDraftsKey = 'charge_sheet_drafts_v1';
+  static const _if5DraftsKey = 'if5_drafts_v1';
 
+
+
+  Future<FinalCdDraft?> loadFinalCdDraft(String caseId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_finalCdDraftsKey);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, dynamic>.from(jsonDecode(raw));
+    final item = map[caseId];
+    if (item == null) return null;
+    return FinalCdDraft.fromJson(Map<String, dynamic>.from(item));
+  }
+
+  Future<void> saveFinalCdDraft(FinalCdDraft draft) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_finalCdDraftsKey);
+    final map = raw == null || raw.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(raw));
+    map[draft.caseId] = draft.toJson();
+    await prefs.setString(_finalCdDraftsKey, jsonEncode(map));
+  }
+
+  Future<ChargeSheetDraft?> loadChargeSheetDraft(String caseId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_chargeSheetDraftsKey);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, dynamic>.from(jsonDecode(raw));
+    final item = map[caseId];
+    if (item == null) return null;
+    return ChargeSheetDraft.fromJson(Map<String, dynamic>.from(item));
+  }
+
+  Future<void> saveChargeSheetDraft(ChargeSheetDraft draft) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_chargeSheetDraftsKey);
+    final map = raw == null || raw.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(raw));
+    map[draft.caseId] = draft.toJson();
+    await prefs.setString(_chargeSheetDraftsKey, jsonEncode(map));
+  }
+
+  Future<If5Draft?> loadIf5Draft(String caseId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_if5DraftsKey);
+    if (raw == null || raw.isEmpty) return null;
+    final map = Map<String, dynamic>.from(jsonDecode(raw));
+    final item = map[caseId];
+    if (item == null) return null;
+    return If5Draft.fromJson(Map<String, dynamic>.from(item));
+  }
+
+  Future<void> saveIf5Draft(If5Draft draft) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_if5DraftsKey);
+    final map = raw == null || raw.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(raw));
+    map[draft.caseId] = draft.toJson();
+    await prefs.setString(_if5DraftsKey, jsonEncode(map));
+  }
 
   Future<List<NcrReport>> loadNcrReports() async {
     final prefs = await SharedPreferences.getInstance();

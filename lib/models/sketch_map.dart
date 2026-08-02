@@ -1,45 +1,74 @@
-enum SketchObjectType { house, pond, tree, shop, road, field, po, arrow }
+enum SketchObjectType {
+  house,
+  pond,
+  tree,
+  shop,
+  road,
+  field,
+  tower,
+  lampPost,
+  gumti,
+  vacantLand,
+  gate,
+  electricPole,
+  canal,
+  river,
+  railway,
+  school,
+  hospital,
+  office,
+  po,
+  arrow,
+}
 
 extension SketchObjectTypeLabel on SketchObjectType {
   String get label {
     switch (this) {
-      case SketchObjectType.house:
-        return 'House';
-      case SketchObjectType.pond:
-        return 'Pond';
-      case SketchObjectType.tree:
-        return 'Tree';
-      case SketchObjectType.shop:
-        return 'Shop';
-      case SketchObjectType.road:
-        return 'Road';
-      case SketchObjectType.field:
-        return 'Field';
-      case SketchObjectType.po:
-        return 'PO';
-      case SketchObjectType.arrow:
-        return 'Arrow';
+      case SketchObjectType.house: return 'House';
+      case SketchObjectType.pond: return 'Pond';
+      case SketchObjectType.tree: return 'Tree';
+      case SketchObjectType.shop: return 'Shop';
+      case SketchObjectType.road: return 'Road';
+      case SketchObjectType.field: return 'Field';
+      case SketchObjectType.tower: return 'Tower';
+      case SketchObjectType.lampPost: return 'Lamp Post';
+      case SketchObjectType.gumti: return 'Gumti';
+      case SketchObjectType.vacantLand: return 'Vacant Land';
+      case SketchObjectType.gate: return 'Gate';
+      case SketchObjectType.electricPole: return 'Electric Pole';
+      case SketchObjectType.canal: return 'Canal';
+      case SketchObjectType.river: return 'River';
+      case SketchObjectType.railway: return 'Railway';
+      case SketchObjectType.school: return 'School';
+      case SketchObjectType.hospital: return 'Hospital';
+      case SketchObjectType.office: return 'Office';
+      case SketchObjectType.po: return 'PO';
+      case SketchObjectType.arrow: return 'North Arrow';
     }
   }
 
   String get symbol {
     switch (this) {
-      case SketchObjectType.house:
-        return 'HOUSE';
-      case SketchObjectType.pond:
-        return 'POND';
-      case SketchObjectType.tree:
-        return 'TREE';
-      case SketchObjectType.shop:
-        return 'SHOP';
-      case SketchObjectType.road:
-        return 'ROAD';
-      case SketchObjectType.field:
-        return 'FIELD';
-      case SketchObjectType.po:
-        return 'PO';
-      case SketchObjectType.arrow:
-        return 'N';
+      case SketchObjectType.house: return 'HOUSE';
+      case SketchObjectType.pond: return 'POND';
+      case SketchObjectType.tree: return 'TREE';
+      case SketchObjectType.shop: return 'SHOP';
+      case SketchObjectType.road: return 'ROAD';
+      case SketchObjectType.field: return 'FIELD';
+      case SketchObjectType.tower: return 'TOWER';
+      case SketchObjectType.lampPost: return 'LAMP';
+      case SketchObjectType.gumti: return 'GUMTI';
+      case SketchObjectType.vacantLand: return 'VACANT';
+      case SketchObjectType.gate: return 'GATE';
+      case SketchObjectType.electricPole: return 'E-POLE';
+      case SketchObjectType.canal: return 'CANAL';
+      case SketchObjectType.river: return 'RIVER';
+      case SketchObjectType.railway: return 'RAIL';
+      case SketchObjectType.school: return 'SCHOOL';
+      case SketchObjectType.hospital: return 'HOSPITAL';
+      case SketchObjectType.office: return 'OFFICE';
+      case SketchObjectType.po: return 'PO';
+      case SketchObjectType.arrow: return 'N';
     }
   }
 }
@@ -85,9 +114,9 @@ class SketchMapObject {
     double y = 0.40,
   }) {
     final now = DateTime.now();
-    final bool isRoad = type == SketchObjectType.road;
+    final bool isLinear = {SketchObjectType.road, SketchObjectType.canal, SketchObjectType.river, SketchObjectType.railway}.contains(type);
     final bool isArrow = type == SketchObjectType.arrow;
-    final bool isTree = type == SketchObjectType.tree;
+    final bool isSlim = {SketchObjectType.tree, SketchObjectType.tower, SketchObjectType.lampPost, SketchObjectType.electricPole, SketchObjectType.gate}.contains(type);
     return SketchMapObject(
       id: 'sketch_obj_${now.microsecondsSinceEpoch}',
       type: type,
@@ -97,8 +126,8 @@ class SketchMapObject {
       indexDescription: '',
       x: x,
       y: y,
-      width: isRoad ? 0.46 : (isTree || isArrow ? 0.15 : 0.20),
-      height: isRoad ? 0.08 : (isTree || isArrow ? 0.18 : 0.14),
+      width: isLinear ? 0.46 : (isSlim || isArrow ? 0.15 : 0.20),
+      height: isLinear ? 0.08 : (isSlim || isArrow ? 0.18 : 0.14),
       rotationDeg: 0,
     );
   }

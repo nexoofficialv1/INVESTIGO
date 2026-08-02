@@ -10,7 +10,7 @@ import '../core/app_theme.dart';
 import '../models/ncr_report.dart';
 import '../models/officer_profile.dart';
 import '../services/doc_export_service.dart';
-import '../services/local_store_service.dart';
+import '../data/domain/ncr_store.dart';
 import '../services/pdf_service.dart';
 
 class NcrScreen extends StatefulWidget {
@@ -22,7 +22,7 @@ class NcrScreen extends StatefulWidget {
 }
 
 class _NcrScreenState extends State<NcrScreen> {
-  final _store = LocalStoreService();
+  final _store = NcrStore();
   final _pdf = PdfService();
   final _doc = DocExportService();
   final Map<String, TextEditingController> _c = {};

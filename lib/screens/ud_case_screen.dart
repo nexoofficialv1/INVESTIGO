@@ -9,7 +9,7 @@ import '../core/app_theme.dart';
 import '../models/officer_profile.dart';
 import '../models/ud_case.dart';
 import '../services/doc_export_service.dart';
-import '../services/local_store_service.dart';
+import '../data/domain/ud_case_store.dart';
 import '../services/pdf_service.dart';
 
 class UdCaseScreen extends StatefulWidget {
@@ -21,7 +21,7 @@ class UdCaseScreen extends StatefulWidget {
 }
 
 class _UdCaseScreenState extends State<UdCaseScreen> {
-  final _store = LocalStoreService();
+  final _store = UdCaseStore();
   final _pdf = PdfService();
   final _doc = DocExportService();
   final Map<String, TextEditingController> _c = {};
@@ -189,6 +189,15 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
     );
   }
 
+  Future<void> _exportDeadBodyChallanDoc() async {
+    _ud = _collect();
+    final bytes = await _doc.buildUdDeadBodyChallanDoc(officer: widget.profile, ud: _ud);
+    final dir = await getTemporaryDirectory();
+    final path = '${dir.path}/UD_Dead_Body_Challan_${_ud.udNo.replaceAll('/', '_')}.doc';
+    await File(path).writeAsBytes(bytes, flush: true);
+    await Share.shareXFiles([XFile(path)], text: 'UD Dead Body Challan DOC');
+  }
+
   Future<void> _previewFinalReport() async {
     _ud = _collect();
     final bytes = await _pdf.buildUdFinalReportPdf(
@@ -208,6 +217,15 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
       bytes: bytes,
       filename: 'UD_Final_Report_${_ud.udNo.replaceAll('/', '_')}.pdf',
     );
+  }
+
+  Future<void> _exportFinalReportDoc() async {
+    _ud = _collect();
+    final bytes = await _doc.buildUdFinalReportDoc(officer: widget.profile, ud: _ud);
+    final dir = await getTemporaryDirectory();
+    final path = '${dir.path}/UD_Final_Report_${_ud.udNo.replaceAll('/', '_')}.doc';
+    await File(path).writeAsBytes(bytes, flush: true);
+    await Share.shareXFiles([XFile(path)], text: 'UD Final Report DOC');
   }
 
   void _loadUd(UdCase ud) {
@@ -331,6 +349,11 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
                         icon: const Icon(Icons.picture_as_pdf),
                         label: const Text('ডেডবডি চালান PDF'),
                       ),
+                      ElevatedButton.icon(
+                        onPressed: _exportDeadBodyChallanDoc,
+                        icon: const Icon(Icons.description),
+                        label: const Text('ডেডবডি চালান DOC'),
+                      ),
                       OutlinedButton.icon(
                         onPressed: _previewFinalReport,
                         icon: const Icon(Icons.visibility),
@@ -340,6 +363,11 @@ class _UdCaseScreenState extends State<UdCaseScreen> {
                         onPressed: _exportFinalReport,
                         icon: const Icon(Icons.picture_as_pdf),
                         label: const Text('Final Report PDF'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _exportFinalReportDoc,
+                        icon: const Icon(Icons.description),
+                        label: const Text('Final Report DOC'),
                       ),
                     ],
                   ),

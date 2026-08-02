@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/case_file.dart';
 import '../models/cd_entry.dart';
 import '../models/officer_profile.dart';
-import '../services/local_store_service.dart';
+import '../data/domain/case_investigation_store.dart';
 import 'case_form_screen.dart';
 import 'cd_builder_screen.dart';
 import 'cd_editor_screen.dart';
@@ -13,6 +13,7 @@ import 'compliance_screen.dart';
 import 'sketch_map_screen.dart';
 import 'evidence_screen.dart';
 import 'investigation_screen.dart';
+import 'final_case_documents_screen.dart';
 
 class CaseDetailScreen extends StatefulWidget {
   final OfficerProfile profile;
@@ -25,7 +26,7 @@ class CaseDetailScreen extends StatefulWidget {
 }
 
 class _CaseDetailScreenState extends State<CaseDetailScreen> {
-  final LocalStoreService _store = LocalStoreService();
+  final CaseInvestigationStore _store = CaseInvestigationStore();
   late CaseFile _caseFile;
   List<CdEntry> _cds = [];
 
@@ -116,6 +117,19 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     await _load();
   }
 
+  Future<void> _openFinalCaseDocuments() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FinalCaseDocumentsScreen(
+          profile: widget.profile,
+          caseFile: _caseFile,
+        ),
+      ),
+    );
+    await _load();
+  }
+
   Future<void> _openCompliance() async {
     await Navigator.push(
       context,
@@ -171,6 +185,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                 _moduleCard('Compliance', Icons.checklist, _openCompliance),
                 _moduleCard('Evidence', Icons.inventory_2, _openEvidence),
                 _moduleCard('Sketch Map', Icons.map, _openSketchMap),
+                _moduleCard('Final CD / CS / IF-5', Icons.fact_check, _openFinalCaseDocuments),
               ],
             ),
             const SizedBox(height: 18),
