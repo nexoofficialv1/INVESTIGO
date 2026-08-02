@@ -1789,8 +1789,7 @@ extension NcrPdfExport on PdfService {
           0: pw.FlexColumnWidth(ratios[0]), 1: pw.FlexColumnWidth(ratios[1]),
           2: pw.FlexColumnWidth(ratios[2]), 3: pw.FlexColumnWidth(ratios[3]),
         }, children: [pw.TableRow(children: [
-          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('I
-${draft.entryTime}', style: const pw.TextStyle(fontSize: 8.5))),
+          pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('I\n${draft.entryTime}', style: const pw.TextStyle(fontSize: 8.5))),
           pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(draft.entryPlace, style: const pw.TextStyle(fontSize: 8.5))),
           pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(draft.synopsis, style: const pw.TextStyle(fontSize: 8.5))),
           pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [

@@ -49,3 +49,9 @@ New final-document fields use defaults when opening older locally saved drafts. 
 
 ## v1.7.6
 Release scope is deterministic and local. Missing or invalid manifest entries are caught by automated tests before packaging.
+
+
+## RC-1 formatter parse hotfix
+- Final CD entry label uses an escaped newline (`I\n<time>`) inside one Dart string literal.
+- CI formatting must stop immediately on parse errors and must not continue to APK build.
+- This fix changes rendering syntax only; no case data or template fields are changed.
