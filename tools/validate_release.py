@@ -38,9 +38,15 @@ for name in required_sources:
         errors.append(f'missing-source:{name}')
 
 pdf_text = (root / 'lib/services/pdf_service.dart').read_text(encoding='utf-8')
-for marker in ['5371', '5370', '5363', '5203', '“A” FORM', 'W.B.P. FORM NO.']:
+for marker in ['5371', '5370', '5363', '5203', '“A” FORM']:
     if marker not in pdf_text:
         errors.append(f'missing-template-marker:{marker}')
+
+# The official Form 39 caption appears as ‘W.B.P Form No. 39’ in the
+# supplied specimen. Accept harmless punctuation/case variants while still
+# requiring the complete W.B.P + Form No. marker in the PDF renderer.
+if not re.search(r'W\.B\.P\.?\s+Form\s+No\.', pdf_text, re.IGNORECASE):
+    errors.append('missing-template-marker:W.B.P Form No.')
 
 spec_text = (root / 'lib/services/official_template_spec.dart').read_text(encoding='utf-8')
 for marker in ['cdColumnRatios', 'ncrColumnRatios', 'if5WitnessColumnRatios']:
