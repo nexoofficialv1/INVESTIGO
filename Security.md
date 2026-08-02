@@ -64,3 +64,11 @@ Bengali/English translation uses downloadable ML Kit language models. The app do
 ## v194 Export Handling
 
 PDF bytes remain in preview memory; DOC files use the app temporary directory and platform share sheet. No silent upload is introduced.
+
+<!-- v195-desktop-foundation -->
+## v195 Windows security notes
+
+The portable build stores application data in the platform application-data
+location selected by Flutter plugins. No administrator privilege is required.
+Only trusted GitHub Actions artifacts should be executed. Code signing,
+installer signing and managed-device deployment remain future release gates.

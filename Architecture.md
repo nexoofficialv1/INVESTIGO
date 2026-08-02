@@ -108,3 +108,12 @@ The Form 5363 renderer now uses `OfficialTemplateSpec.cdColumnRatios` as the sin
 ## v194 Document Preview Pipeline
 
 CD and Statement preview are independent of translation-model readiness. One cached PDF future feeds preview, print and PDF sharing; DOC export is separately guarded.
+
+<!-- v195-desktop-foundation -->
+## v195 Windows desktop foundation
+
+The application now has a platform entry boundary. Android continues to open
+`DashboardScreen`; Windows, macOS and Linux desktop targets open
+`DesktopWorkspaceScreen`. Both routes reuse the same domain models,
+`LocalStoreService`, official document renderers, profile and language
+controller. The initial certified target is Windows.

@@ -79,3 +79,11 @@ Official forms must not combine rotated content, nested `Expanded`, and fixed-he
 ## v194 Preview and Export Errors
 
 Preview shows loading, error details and Retry. PDF/DOC sharing catches failures. Translation download is time-bounded and enters a short cooldown so repeated CD rows do not repeatedly wait.
+
+<!-- v195-desktop-foundation -->
+## v195 desktop error handling
+
+Desktop launchers guard case-dependent actions when no case exists and show a
+user-facing message instead of opening an invalid screen. CI verifies that the
+Windows executable exists before packaging. Failed validation, analysis, tests,
+build or executable checks stop the workflow and prevent artifact upload.

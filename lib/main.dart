@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'core/app_theme.dart';
 import 'core/app_language.dart';
+import 'core/platform_info.dart';
 import 'models/officer_profile.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/desktop_workspace_screen.dart';
 import 'screens/officer_profile_screen.dart';
 import 'screens/intro_screen.dart';
 import 'services/local_store_service.dart';
@@ -77,6 +79,8 @@ class _StartupGateState extends State<StartupGate> {
         },
       );
     }
-    return DashboardScreen(profile: profile);
+    return isDesktopRuntime
+        ? DesktopWorkspaceScreen(profile: profile)
+        : DashboardScreen(profile: profile);
   }
 }

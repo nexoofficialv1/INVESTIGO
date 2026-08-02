@@ -124,3 +124,14 @@ Pending outside this source package:
 ## RC-1 v194
 
 Completed mobile CD preview/PDF/DOC reliability and non-blocking translation fallback.
+
+<!-- v195-desktop-foundation -->
+## Desktop phase D1 — foundation
+
+- Add a Windows-first wide-screen shell and sidebar navigation.
+- Reuse current Case, CD, Report, UD, NCR, Backup and Settings screens.
+- Add GitHub Actions Windows release packaging.
+- Gate completion on a successful CI build and physical Windows verification.
+
+Later phases may add multi-window editing, searchable register tables,
+installer signing and PostgreSQL synchronization.

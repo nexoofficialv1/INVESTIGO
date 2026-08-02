@@ -37,3 +37,11 @@ Production ব্যবহারের আগে বাস্তব ডিভা
 ## RC-1 completion package
 
 The current source version is `1.8.0-rc.5+186`. See `RC1_COMPLETION_NOTES.md` for the consolidated Settings, CD renderer, profile binding, dashboard and official-form fixes.
+
+<!-- v195-desktop-foundation -->
+## Windows desktop foundation
+
+From v195, the shared Flutter source includes a Windows-first desktop workspace.
+The `Build Windows Desktop` GitHub Actions workflow creates a portable
+`INVESTIGO-Windows-v195` artifact. Windows device verification is required
+before production use.

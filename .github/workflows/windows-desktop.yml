@@ -1,0 +1,97 @@
+name: Build Windows Desktop
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: investigo-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show tool versions
+        shell: pwsh
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Enable and generate Windows platform
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          flutter create . --platforms=windows --project-name=investigo --org=com.investigo
+
+      - name: Configure Windows application name
+        shell: pwsh
+        run: |
+          $cmake = "windows/CMakeLists.txt"
+          $text = Get-Content $cmake -Raw
+          $text = $text -replace 'set\(BINARY_NAME "investigo"\)', 'set(BINARY_NAME "INVESTIGO")'
+          Set-Content $cmake $text -Encoding UTF8
+
+          $runnerRc = "windows/runner/Runner.rc"
+          $rc = Get-Content $runnerRc -Raw
+          $rc = $rc -replace '"investigo"', '"INVESTIGO"'
+          Set-Content $runnerRc $rc -Encoding UTF8
+
+      - name: Validate release source
+        run: python tools/validate_release.py
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Format Dart source
+        run: dart format lib test
+
+      - name: Analyze source
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run tests
+        run: flutter test --reporter=expanded
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Verify Windows executable
+        shell: pwsh
+        run: |
+          $exe = "build/windows/x64/runner/Release/INVESTIGO.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Windows executable not found: $exe"
+          }
+          Get-Item $exe | Format-List Name,Length,LastWriteTime
+
+      - name: Package portable Windows build
+        shell: pwsh
+        run: |
+          $source = "build/windows/x64/runner/Release/*"
+          $zip = "build/INVESTIGO-Windows-v195.zip"
+          Compress-Archive -Path $source -DestinationPath $zip -Force
+
+      - name: Upload Windows portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: INVESTIGO-Windows-v195
+          path: build/INVESTIGO-Windows-v195.zip
+          if-no-files-found: error
+          retention-days: 14

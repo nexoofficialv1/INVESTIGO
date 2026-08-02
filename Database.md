@@ -88,3 +88,11 @@ No duplicate UD document database was introduced. Auto-filled narration values a
 ## v194 Data Impact
 
 No schema or migration change. Preview/export reads the saved CD and Statement records.
+
+<!-- v195-desktop-foundation -->
+## v195 desktop storage
+
+The desktop foundation retains the existing SharedPreferences keys and JSON
+model contracts. This prevents model drift between mobile and desktop and keeps
+backup import/export compatible. PostgreSQL remains an integration target;
+v195 does not silently migrate local records or introduce a second schema.

@@ -67,3 +67,11 @@ For best extraction, officers may write natural sentences or use labels such as 
 ## v194 Translation Rule
 
 Attempt target-language translation, but never block official document access. Preserve original entered text when the model is unavailable.
+
+<!-- v195-desktop-foundation -->
+## v195 desktop prompt policy
+
+No official-document generation prompt was changed. Desktop uses the same
+bilingual labels, locked templates, user-entered facts and preview/PDF/DOC
+pipeline as mobile. Platform-specific UI instructions must never alter legal
+facts or template text.
