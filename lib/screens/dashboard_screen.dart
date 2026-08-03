@@ -8,6 +8,7 @@ import '../services/local_store_service.dart';
 import '../widgets/home_grid_card.dart';
 import 'case_detail_screen.dart';
 import 'case_form_screen.dart';
+import 'case_register_screen.dart';
 import 'forms_screen.dart';
 import 'statement_screen.dart';
 import 'compliance_screen.dart';
@@ -108,13 +109,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _openLatestCase() async {
-    final file = _latestCase;
-    if (file == null) {
-      await _newCase();
-      return;
-    }
-    await _openCase(file);
+  Future<void> _openCaseRegister() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CaseRegisterScreen(profile: _profile),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _tabIndex = 0);
+    await _load();
   }
 
   Future<void> _openCdWriter() async {
@@ -360,7 +364,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         currentIndex: _tabIndex,
         onTap: (i) {
           setState(() => _tabIndex = i);
-          if (i == 1) _openLatestCase();
+          if (i == 1) _openCaseRegister();
           if (i == 2) _comingSoon('Tasks / Pending CD Entries');
           if (i == 3) _openSettings();
         },
