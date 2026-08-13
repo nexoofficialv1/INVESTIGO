@@ -117,3 +117,22 @@ The application now has a platform entry boundary. Android continues to open
 `DesktopWorkspaceScreen`. Both routes reuse the same domain models,
 `LocalStoreService`, official document renderers, profile and language
 controller. The initial certified target is Windows.
+
+## v204 — Offline Legal Reference Layer
+INVESTIGO includes a local BNS/BNSS searchable index. Search/index correspondence data is kept separate from verified statutory text. Verified records carry explicit source provenance; comparison notes are never presented as authoritative bare-Act text. Case Detail and CD Builder link into the same LegalReferenceService.
+
+## v205 — Bilingual BNSS Forms Layer
+Bilingual statutory/investigation form templates are stored separately from the legacy form generator. English and Bengali are explicit editable variants; template provenance and section linkage are metadata. Final-saved forms can create PendingCdAction entries so the CD engine consumes the action without retyping.
+
+## v206 — Structured Form Workflow
+The bilingual form layer is now data-driven. FormNotice stores backward-compatible `workflowData`; schema-defined fields render the final form body and create date/time/place-aware PendingCdAction records. Raw body remains editable, but operational facts are collected through selectors and repeaters.
+
+## v207 — Simple Officer UI/UX
+The primary mobile presentation layer uses a reusable INVESTIGO design system and guided single-step workflows. Complex legal/investigation engines remain separate from the visual layer. CD and structured forms expose one current question at a time while retaining the underlying complete state and validation.
+
+## v208 — Critical Data Integrity & UD Lifecycle
+UD documents are stage-gated: registration → Section 194 inquest/surathal → dead-body challan/PM forwarding → PM completed → PM report received → final form. The final report is generated only from officer-entered/confirmed findings after PM report receipt. Dashboard UD routing uses the lifecycle screen. Case entry stores FIR/case facts only; investigation actions belong to the CD workflow. General Reports open without silently binding the latest case; case-linked reports are opened from the case workspace.
+
+## v208.1 — Official UD Format Preservation
+The v208 lifecycle remains the source of stage/state and chronology, but UD printing is adapter-based. Inquest delegates to the established detailed INQUEST FORM renderer. Dead Body Challan delegates to the established W.B. Form No. 5371 / P.R.B. Form No. 54, Rule 252 renderer. UD Final Report keeps the established W.B. Form No. 5370 / P.R.B. Form No. 53, Rule 276 layout while substituting only officer-confirmed PM/final facts and corrected spot-visit/final-dispatch times. Lifecycle/debug notes and replacement columns are prohibited in official outputs.
+

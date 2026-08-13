@@ -75,3 +75,22 @@ No official-document generation prompt was changed. Desktop uses the same
 bilingual labels, locked templates, user-entered facts and preview/PDF/DOC
 pipeline as mobile. Platform-specific UI instructions must never alter legal
 facts or template text.
+
+## v204
+No generative prompt is allowed to rewrite statutory text as if it were official. Any helper translation/explanation must remain visibly labelled as assistive.
+
+## v205
+No generative model may fabricate form facts, service status, arrest grounds, witness details, seized items, medical findings or FSL results. Templates provide structure only; the officer supplies and validates case facts.
+
+## v206
+Form drafting is deterministic from officer-entered structured facts. Any assisted drafting must preserve explicit user facts and must not promote helper Bengali wording to authenticated statutory translation.
+
+## v207 — Guided input
+UI guidance may simplify wording but must not change the evidentiary meaning of officer-entered facts or generate investigative acts that were not supplied.
+
+## v208
+Draft/report prompts must use only supplied facts. Never auto-write “no foul play”, “visited PO”, “witnesses examined”, “inquest held”, “PM conducted”, or equivalent unless the corresponding officer-confirmed record exists.
+
+## v208.1
+Do not rewrite official UD form layouts. Data assistance may populate existing fields only. Any conclusion about foul play must come from the explicit officer selection; PM cause of death must come from the entered PM Report.
+

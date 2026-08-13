@@ -179,14 +179,40 @@ $entryRows
         await translator.translateToCurrentLanguage(statement.statementType);
     final statementBody =
         await translator.translateToCurrentLanguage(statement.body);
+    final recordedPlace = statement.recordedPlace.trim().isEmpty
+        ? ''
+        : await translator.translateToCurrentLanguage(statement.recordedPlace);
+    final recorder = statement.recordedBy.trim().isNotEmpty
+        ? statement.recordedBy.trim()
+        : '${officer.rank} ${officer.name}'.trim();
     final bn = AppLanguageController.instance.isBengali;
     String t(String bengali, String english) => bn ? bengali : english;
+    final metadata = <String>[
+      if (statement.linkedFromCd && statement.sourceCdNumber > 0)
+        '${t('উৎস সিডি', 'Source CD')}: CD-${statement.sourceCdNumber}',
+      if (statement.recordedDate.trim().isNotEmpty)
+        '${t('লিপিবদ্ধের তারিখ', 'Recorded Date')}: ${_officialDate(statement.recordedDate)}',
+      if (statement.recordedTime.trim().isNotEmpty)
+        '${t('লিপিবদ্ধের সময়', 'Recorded Time')}: ${statement.recordedTime.trim()}',
+      if (recordedPlace.isNotEmpty)
+        '${t('লিপিবদ্ধের স্থান', 'Recorded Place')}: $recordedPlace',
+    ];
+    final metadataHtml = metadata.isEmpty
+        ? ''
+        : '<p class="small">${metadata.map(_e).join('<br/>')}</p>';
+    final detailsHtml = witnessDetails.trim().isEmpty
+        ? ''
+        : '<br/>${_e(t('সাক্ষীর বিবরণ', 'Witness Details'))}: ${_e(witnessDetails)}';
+    final typeHtml = statementType.trim().isEmpty
+        ? ''
+        : '<br/>${_e(t('বিবৃতির ধরন', 'Statement Type'))}: ${_e(statementType)}';
     final html = '''
 <div class="center bold">${_e(t('সাক্ষীর বিবৃতি, ধারা ১৮০ বিএনএসএস অনুযায়ী লিপিবদ্ধ', 'Statement of witness recorded u/s 180 BNSS'))}</div><br/>
 <p>${_e(t('মামলার সূত্র', 'Case Reference'))}: ${_e(officer.policeStation)} PS Case No. ${_e(caseFile.psCaseNo)} dated ${_e(caseFile.caseDate)} u/s ${_e(caseFile.sections)}</p>
-<p>${_e(t('সাক্ষীর নাম', 'Name of Witness'))}: ${_e(witnessName)}<br/>${_e(t('সাক্ষীর বিবরণ', 'Witness Details'))}: ${_e(witnessDetails)}<br/>${_e(t('বিবৃতির ধরন', 'Statement Type'))}: ${_e(statementType)}</p>
+<p>${_e(t('সাক্ষীর নাম', 'Name of Witness'))}: ${_e(witnessName)}$detailsHtml$typeHtml</p>
+$metadataHtml
 <p class="justify">${_e(statementBody)}</p>
-<table class="no-border" style="margin-top:40px"><tr><td>${_e(t('সাক্ষীর স্বাক্ষর/এলটিআই/আরটিআই', 'Signature/LTI/RTI of witness'))}</td><td class="right">${_e(t('লিপিবদ্ধ করেছেন', 'Recorded by'))}<br/><br/>${_e(officer.rank)} ${_e(officer.name)}<br/>${_e(officer.policeStation)}</td></tr></table>
+<div class="right" style="margin-top:40px">${_e(t('লিপিবদ্ধ করেছেন', 'Recorded by'))}<br/><br/>${_e(recorder)}<br/>${_e(officer.policeStation)}</div>
 ''';
     return _docBytes(_page('Statement', html));
   }

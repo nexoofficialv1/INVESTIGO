@@ -96,3 +96,22 @@ The desktop foundation retains the existing SharedPreferences keys and JSON
 model contracts. This prevents model drift between mobile and desktop and keeps
 backup import/export compatible. PostgreSQL remains an integration target;
 v195 does not silently migrate local records or introduce a second schema.
+
+## v204
+No SQLite schema migration. Legal reference data is packaged as immutable application source data; user case records are not modified by legal search.
+
+## v205
+No SQLite schema migration. Bilingual form language is encoded in the saved templateId suffix (`__en` / `__bn`) while existing FormNotice JSON remains backward compatible.
+
+## v206
+No SQLite migration is required for the current JSON-backed forms store. `FormNotice.workflowData` is optional and defaults to an empty map, preserving legacy saved forms.
+
+## v207
+No database schema migration is introduced by the UI/UX foundation.
+
+## v208
+Adds backward-compatible SharedPreferences record `ud_lifecycle_v208`, keyed by existing UD case UUID. Existing `ud_cases_v1` records are not migrated or overwritten. Lifecycle dates, PM/challan data, PM report findings and finalization status remain separate from the legacy UD payload.
+
+## v208.1
+`ud_lifecycle_v208` gains backward-compatible optional `spotVisitDate` and `spotVisitTime` fields. Old lifecycle records load them as empty strings and remain readable; officer must fill them before a new Final Form can be finalized.
+

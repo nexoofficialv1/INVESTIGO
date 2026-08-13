@@ -4,6 +4,7 @@ class FormNotice {
   final String templateId;
   final String title;
   final String body;
+  final Map<String, dynamic> workflowData;
   final bool isFinal;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -14,6 +15,7 @@ class FormNotice {
     required this.templateId,
     required this.title,
     required this.body,
+    this.workflowData = const {},
     required this.isFinal,
     required this.createdAt,
     required this.updatedAt,
@@ -24,6 +26,7 @@ class FormNotice {
     required String templateId,
     required String title,
     required String body,
+    Map<String, dynamic> workflowData = const {},
   }) {
     final now = DateTime.now();
     return FormNotice(
@@ -32,6 +35,7 @@ class FormNotice {
       templateId: templateId,
       title: title,
       body: body,
+      workflowData: Map<String, dynamic>.from(workflowData),
       isFinal: false,
       createdAt: now,
       updatedAt: now,
@@ -41,6 +45,7 @@ class FormNotice {
   FormNotice copyWith({
     String? title,
     String? body,
+    Map<String, dynamic>? workflowData,
     bool? isFinal,
   }) {
     return FormNotice(
@@ -49,6 +54,7 @@ class FormNotice {
       templateId: templateId,
       title: title ?? this.title,
       body: body ?? this.body,
+      workflowData: workflowData ?? this.workflowData,
       isFinal: isFinal ?? this.isFinal,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
@@ -61,6 +67,7 @@ class FormNotice {
         'templateId': templateId,
         'title': title,
         'body': body,
+        'workflowData': workflowData,
         'isFinal': isFinal,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
@@ -73,6 +80,7 @@ class FormNotice {
       templateId: json['templateId'] ?? '',
       title: json['title'] ?? '',
       body: json['body'] ?? '',
+      workflowData: Map<String, dynamic>.from(json['workflowData'] ?? const {}),
       isFinal: json['isFinal'] ?? false,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),

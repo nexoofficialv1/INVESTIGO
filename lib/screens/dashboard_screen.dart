@@ -1,36 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
 import '../core/app_language.dart';
 import '../models/case_file.dart';
 import '../models/officer_profile.dart';
 import '../services/local_store_service.dart';
-import '../widgets/home_grid_card.dart';
+import '../widgets/investigo_ui.dart';
+import 'backend_settings_screen.dart';
+import 'backup_screen.dart';
 import 'case_detail_screen.dart';
 import 'case_form_screen.dart';
-import 'case_register_screen.dart';
-import 'forms_screen.dart';
-import 'statement_screen.dart';
-import 'compliance_screen.dart';
-import 'investigation_checklist_screen.dart';
-import 'report_screen.dart';
-import 'officer_profile_screen.dart';
-import 'sketch_map_screen.dart';
 import 'case_parser_screen.dart';
+import 'case_register_screen.dart';
+import 'compliance_screen.dart';
 import 'evidence_screen.dart';
-import 'backend_settings_screen.dart';
-import 'ud_case_screen.dart';
-import 'sop_compliance_screen.dart';
+import 'final_case_documents_screen.dart';
+import 'forms_screen.dart';
+import 'investigation_checklist_screen.dart';
 import 'investigation_screen.dart';
-import 'backup_screen.dart';
+import 'legal_reference_screen.dart';
 import 'license_screen.dart';
 import 'ncr_screen.dart';
+import 'officer_profile_screen.dart';
 import 'release_center_screen.dart';
-import 'final_case_documents_screen.dart';
+import 'report_screen.dart';
 import 'settings_screen.dart';
+import 'sketch_map_screen.dart';
+import 'sop_compliance_screen.dart';
+import 'statement_screen.dart';
+import 'ud_case_workflow_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final OfficerProfile profile;
+
   const DashboardScreen({super.key, required this.profile});
 
   @override
@@ -74,50 +75,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _newCase() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => CaseFormScreen(profile: _profile)));
-    await _load();
-  }
+  CaseFile? get _latestCase => _cases.isEmpty ? null : _cases.first;
 
-  Future<void> _editProfile() async {
+  Future<void> _newCase() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => OfficerProfileScreen(
-          profile: _profile,
-          onSaved: (updated) async {
-            await _store.saveOfficerProfile(updated);
-            if (!mounted) return;
-            setState(() => _profile = updated);
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => CaseFormScreen(profile: _profile)),
     );
-  }
-
-  Future<void> _openCase(CaseFile file) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => CaseDetailScreen(profile: _profile, caseFile: file)));
     await _load();
   }
-
-  CaseFile? get _latestCase => _cases.isEmpty ? null : _cases.first;
 
   void _needCaseMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('প্রথমে একটি case create করুন, তারপর এই module খুলবে।')),
+      SnackBar(
+        content: Text(L10n.t(
+          'প্রথমে একটি মামলা তৈরি করুন।',
+          'Create a case first.',
+        )),
+      ),
     );
   }
 
   Future<void> _openCaseRegister() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => CaseRegisterScreen(profile: _profile),
-      ),
+      MaterialPageRoute(builder: (_) => CaseRegisterScreen(profile: _profile)),
     );
-    if (!mounted) return;
-    setState(() => _tabIndex = 0);
     await _load();
   }
 
@@ -127,10 +110,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _newCase();
       return;
     }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => CaseDetailScreen(profile: _profile, caseFile: file)));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CaseDetailScreen(profile: _profile, caseFile: file),
+      ),
+    );
     await _load();
   }
 
+  Future<void> _openForms() async {
+    final file = _latestCase;
+    if (file == null) {
+      _needCaseMessage();
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FormsScreen(profile: _profile, caseFile: file),
+      ),
+    );
+  }
+
+  Future<void> _openStatements() async {
+    final file = _latestCase;
+    if (file == null) {
+      _needCaseMessage();
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StatementScreen(profile: _profile, caseFile: file),
+      ),
+    );
+  }
+
+  Future<void> _openSketchMap() async {
+    final file = _latestCase;
+    if (file == null) {
+      _needCaseMessage();
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SketchMapScreen(profile: _profile, caseFile: file),
+      ),
+    );
+    await _load();
+  }
+
+  Future<void> _openInvestigation() async {
+    final file = _latestCase;
+    if (file == null) {
+      _needCaseMessage();
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvestigationScreen(profile: _profile, caseFile: file),
+      ),
+    );
+    await _load();
+  }
+
+  Future<void> _openEvidence() async {
+    final file = _latestCase;
+    if (file == null) {
+      _needCaseMessage();
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EvidenceScreen(profile: _profile, caseFile: file),
+      ),
+    );
+  }
 
   Future<void> _openFinalCaseDocuments() async {
     final file = _latestCase;
@@ -150,22 +209,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _load();
   }
 
-  Future<void> _openForms() async {
-    final file = _latestCase;
-    if (file == null) {
-      _needCaseMessage();
-      return;
-    }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => FormsScreen(profile: _profile, caseFile: file)));
+  Future<void> _openReport() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReportScreen(profile: _profile, caseFile: null),
+      ),
+    );
   }
 
-  Future<void> _openStatements() async {
-    final file = _latestCase;
-    if (file == null) {
-      _needCaseMessage();
-      return;
-    }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => StatementScreen(profile: _profile, caseFile: file)));
+  Future<void> _openCaseParser() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CaseParserScreen(profile: _profile)),
+    );
+    await _load();
   }
 
   Future<void> _openCompliance() async {
@@ -174,7 +232,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _needCaseMessage();
       return;
     }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => ComplianceScreen(caseFile: file)));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ComplianceScreen(caseFile: file)),
+    );
   }
 
   Future<void> _openInvestigationChecklist() async {
@@ -183,75 +244,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _needCaseMessage();
       return;
     }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => InvestigationChecklistScreen(caseFile: file)));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvestigationChecklistScreen(caseFile: file),
+      ),
+    );
   }
 
-  Future<void> _openReport() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => ReportScreen(profile: _profile, caseFile: _latestCase)));
-  }
-
-
-  Future<void> _openCaseParser() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => CaseParserScreen(profile: _profile)));
-    await _load();
-  }
-
-
-  Future<void> _openSketchMap() async {
+  Future<void> _openSopCompliance() async {
     final file = _latestCase;
     if (file == null) {
       _needCaseMessage();
       return;
     }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => SketchMapScreen(profile: _profile, caseFile: file)));
-    await _load();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => SopComplianceScreen(caseFile: file)),
+    );
   }
 
-  Future<void> _openInvestigation() async {
-    final file = _latestCase;
-    if (file == null) {
-      _needCaseMessage();
-      return;
-    }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => InvestigationScreen(profile: _profile, caseFile: file)));
-    await _load();
-  }
-
-  Future<void> _openEvidence() async {
-    final file = _latestCase;
-    if (file == null) {
-      _needCaseMessage();
-      return;
-    }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => EvidenceScreen(profile: _profile, caseFile: file)));
-    await _load();
-  }
-
-  Future<void> _openBackendSettings() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => BackendSettingsScreen(profile: _profile)));
-  }
-
-  Future<void> _openBackup() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => BackupScreen(profile: _profile)));
-  }
-
-  Future<void> _openLicense() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const LicenseScreen()));
+  Future<void> _openLegalReference() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LegalReferenceScreen()),
+    );
   }
 
   Future<void> _openUdCase() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => UdCaseScreen(profile: _profile)));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => UdCaseWorkflowScreen(profile: _profile)),
+    );
   }
 
   Future<void> _openNcr() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => NcrScreen(profile: _profile)));
-  }
-
-
-  Future<void> _openReleaseCenter() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ReleaseCenterScreen()),
+      MaterialPageRoute(builder: (_) => NcrScreen(profile: _profile)),
     );
   }
 
@@ -271,308 +301,435 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _load();
   }
 
-  Future<void> _openSopCompliance() async {
-    final file = _latestCase;
-    if (file == null) {
-      _needCaseMessage();
-      return;
-    }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => SopComplianceScreen(caseFile: file)));
+  Future<void> _openProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OfficerProfileScreen(
+          profile: _profile,
+          onSaved: (updated) async {
+            await _store.saveOfficerProfile(updated);
+            if (!mounted) return;
+            setState(() => _profile = updated);
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
   }
 
-  void _comingSoon(String module) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$module module next patch-এ full screen হবে। এখন Case Detail থেকে কাজ করুন।')),
+  Future<void> _openBackup() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BackupScreen(profile: _profile)),
+    );
+  }
+
+  Future<void> _openBackendSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BackendSettingsScreen(profile: _profile),
+      ),
+    );
+  }
+
+  Future<void> _openLicense() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LicenseScreen()),
+    );
+  }
+
+  Future<void> _openReleaseCenter() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ReleaseCenterScreen()),
     );
   }
 
   Future<void> _chooseLanguage() async {
     final selected = await showModalBottomSheet<AppLanguage>(
       context: context,
+      showDragHandle: true,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.translate),
-              title: const Text('বাংলা'),
-              trailing: AppLanguageController.instance.current == AppLanguage.bengali
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () => Navigator.pop(context, AppLanguage.bengali),
-            ),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: const Text('English'),
-              trailing: AppLanguageController.instance.current == AppLanguage.english
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () => Navigator.pop(context, AppLanguage.english),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const InvestigoPageTitle(
+                title: 'ভাষা নির্বাচন করুন',
+                subtitle: 'Select language',
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                tileColor: InvestigoUi.background,
+                leading: const Icon(Icons.translate),
+                title: const Text('বাংলা'),
+                onTap: () => Navigator.pop(context, AppLanguage.bengali),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                tileColor: InvestigoUi.background,
+                leading: const Icon(Icons.language),
+                title: const Text('English'),
+                onTap: () => Navigator.pop(context, AppLanguage.english),
+              ),
+            ],
+          ),
         ),
       ),
     );
     if (selected != null) {
       await AppLanguageController.instance.setLanguage(selected);
+      if (mounted) setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.cream,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              _topHeader(),
-              const SizedBox(height: 14),
-              _workSummary(),
-              const SizedBox(height: 18),
-              _quickActions(),
-              const SizedBox(height: 18),
-              _gridMenu(),
-              const SizedBox(height: 18),
-              _welcomeBlock(),
-              const SizedBox(height: 90),
-            ],
+      backgroundColor: InvestigoUi.background,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: InvestigoUi.background,
+        surfaceTintColor: Colors.transparent,
+        title: const Text(
+          'INVESTIGO',
+          style: TextStyle(
+            color: InvestigoUi.primaryDark,
+            fontWeight: FontWeight.w900,
+            letterSpacing: .8,
           ),
         ),
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'language',
+        actions: [
+          IconButton(
+            tooltip: L10n.t('ভাষা', 'Language'),
             onPressed: _chooseLanguage,
-            tooltip: L10n.t('ভাষা পরিবর্তন', 'Change language'),
-            child: const Icon(Icons.translate),
+            icon: const Icon(Icons.translate_rounded),
           ),
-          const SizedBox(width: 10),
-          FloatingActionButton.extended(
-            heroTag: 'new-case',
-            onPressed: _newCase,
-            icon: const Icon(Icons.add),
-            label: Text(L10n.t('নতুন মামলা', 'New Case')),
+          IconButton(
+            tooltip: L10n.t('প্রোফাইল', 'Profile'),
+            onPressed: _openProfile,
+            icon: const Icon(Icons.account_circle_outlined),
           ),
+          const SizedBox(width: 6),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tabIndex,
-        onTap: (i) {
-          setState(() => _tabIndex = i);
-          if (i == 1) _openCaseRegister();
-          if (i == 2) _comingSoon('Tasks / Pending CD Entries');
-          if (i == 3) _openSettings();
-        },
-        items: [
-          BottomNavigationBarItem(icon: const Icon(Icons.home_rounded), label: L10n.t('হোম', 'HOME')),
-          BottomNavigationBarItem(icon: const Icon(Icons.folder_copy_rounded), label: L10n.t('মামলা', 'CASES')),
-          BottomNavigationBarItem(icon: const Icon(Icons.notifications_rounded), label: L10n.t('কাজ', 'TASKS')),
-          BottomNavigationBarItem(icon: const Icon(Icons.settings_rounded), label: L10n.t('সেটিংস', 'SETTINGS')),
-        ],
-      ),
-    );
-  }
-
-  Widget _topHeader() {
-    return Container(
-      height: 118,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF003E34), Color(0xFF00745E)],
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Stack(
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
           children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            _welcomeCard(),
+            const SizedBox(height: 18),
+            InvestigoPageTitle(
+              title: L10n.t('আজকের কাজ', "Today's Work"),
+              subtitle: L10n.t(
+                'বড় বাটনে চাপুন — এক ধাপ করে কাজ হবে',
+                'Tap a large button and follow one step at a time',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _primaryGrid(),
+            const SizedBox(height: 20),
+            InvestigoPageTitle(
+              title: L10n.t('এক নজরে', 'At a glance'),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 76,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
                 children: [
-                  const Text(
-                    'INVESTIGO',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 25,
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  InvestigoStatPill(
+                    value: '${_cases.length}',
+                    label: L10n.t('মামলা', 'Cases'),
+                    icon: Icons.folder_copy_outlined,
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${_profile.rank} ${_profile.name}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  const SizedBox(width: 9),
+                  InvestigoStatPill(
+                    value: '$_totalCds',
+                    label: 'CD',
+                    icon: Icons.menu_book_outlined,
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${_profile.policeStation} • ${_profile.district}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  const SizedBox(width: 9),
+                  InvestigoStatPill(
+                    value: '$_pendingActions',
+                    label: L10n.t('বাকি কাজ', 'Pending'),
+                    icon: Icons.schedule_outlined,
+                  ),
+                  const SizedBox(width: 9),
+                  InvestigoStatPill(
+                    value: '$_udCount',
+                    label: 'UD',
+                    icon: Icons.assignment_outlined,
+                  ),
+                  const SizedBox(width: 9),
+                  InvestigoStatPill(
+                    value: '$_ncrCount',
+                    label: 'NCR',
+                    icon: Icons.table_chart_outlined,
                   ),
                 ],
               ),
             ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: IconButton(
-                tooltip: L10n.t('সেটিংস', 'Settings'),
-                onPressed: _openSettings,
-                color: Colors.white,
-                icon: const Icon(Icons.settings_rounded),
-              ),
-            ),
+            const SizedBox(height: 20),
+            _moreTools(),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _workSummary() {
-    final items = <MapEntry<String, String>>[
-      MapEntry(L10n.t('মামলা', 'Cases'), '${_cases.length}'),
-      MapEntry(L10n.t('CD', 'CDs'), '$_totalCds'),
-      MapEntry(L10n.t('Pending', 'Pending'), '$_pendingActions'),
-      MapEntry(L10n.t('UD', 'UD'), '$_udCount'),
-      MapEntry(L10n.t('NCR', 'NCR'), '$_ncrCount'),
-    ];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(L10n.t('আজকের কাজ', "Today's Work"), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 86,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, index) => Container(
-                width: 112,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(items[index].value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
-                  const Spacer(),
-                  Text(items[index].key, style: const TextStyle(fontWeight: FontWeight.w700)),
-                ]),
-              ),
-            ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'new-case',
+        backgroundColor: InvestigoUi.primary,
+        foregroundColor: Colors.white,
+        onPressed: _newCase,
+        icon: const Icon(Icons.add_rounded),
+        label: Text(
+          L10n.t('নতুন মামলা', 'New Case'),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tabIndex,
+        onDestinationSelected: (index) {
+          setState(() => _tabIndex = index);
+          if (index == 1) _openCaseRegister();
+          if (index == 2) _openLegalReference();
+          if (index == 3) _openSettings();
+        },
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: L10n.t('হোম', 'Home'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.folder_outlined),
+            selectedIcon: const Icon(Icons.folder_rounded),
+            label: L10n.t('মামলা', 'Cases'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.gavel_outlined),
+            selectedIcon: const Icon(Icons.gavel_rounded),
+            label: L10n.t('আইন', 'Law'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings_rounded),
+            label: L10n.t('সেটিংস', 'Settings'),
           ),
         ],
       ),
     );
   }
 
-  Widget _quickActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(L10n.t('দ্রুত কাজ', 'Quick Actions'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          FilledButton.icon(onPressed: _newCase, icon: const Icon(Icons.add), label: Text(L10n.t('নতুন মামলা', 'New Case'))),
-          OutlinedButton.icon(onPressed: _openCdWriter, icon: const Icon(Icons.menu_book), label: const Text('CD')),
-          OutlinedButton.icon(onPressed: _openUdCase, icon: const Icon(Icons.assignment), label: const Text('UD')),
-          OutlinedButton.icon(onPressed: _openNcr, icon: const Icon(Icons.table_chart), label: const Text('NCR')),
-          OutlinedButton.icon(onPressed: _openForms, icon: const Icon(Icons.science), label: const Text('FSL / A Form')),
-        ]),
-      ]),
-    );
-  }
-
-  Widget _gridMenu() {
-    final items = [
-      _Menu('Investigation', 'SOP guided', Icons.manage_search_rounded, const Color(0xFF00695C), _openInvestigation),
-      _Menu('Case Diary', 'CD writer', Icons.menu_book_rounded, AppTheme.gold, _openCdWriter),
-      _Menu('New Case', 'case entry', Icons.add_box_rounded, AppTheme.teal, _newCase),
-      _Menu('Case Parser', 'auto extract', Icons.document_scanner_rounded, const Color(0xFF0E7C86), _openCaseParser),
-      _Menu('Forms', 'notice/requisition', Icons.description_rounded, AppTheme.purple, _openForms),
-      _Menu('Statement', '180 BNSS', Icons.assignment_ind_rounded, const Color(0xFF673AB7), _openStatements),
-      _Menu('Checklists', 'investigation needs', Icons.checklist_rounded, AppTheme.blue, _openInvestigationChecklist),
-      _Menu('Report', 'SP/SDPO/SDO', Icons.summarize_rounded, const Color(0xFFD68A00), _openReport),
-      _Menu('Compliance', 'legal checklist', Icons.event_available_rounded, const Color(0xFF1B5E4B), _openCompliance),
-      _Menu('SOP', 'DGP directions', Icons.policy_rounded, const Color(0xFF004D40), _openSopCompliance),
-      _Menu('IF5 / CS', 'from final CD', Icons.fact_check_rounded, AppTheme.coral, _openFinalCaseDocuments),
-      _Menu('Evidence', 'evidence manager', Icons.inventory_2_rounded, const Color(0xFF795000), _openEvidence),
-      _Menu('UD Case', 'inquest/final report', Icons.assignment_rounded, const Color(0xFF5D4037), _openUdCase),
-      _Menu(L10n.t('NCR', 'NCR'), L10n.t('প্রসিকিউশন রিপোর্ট', 'prosecution report'), Icons.table_chart_rounded, const Color(0xFF7B1FA2), _openNcr),
-      _Menu('Settings', 'profile/backup/license/backend', Icons.settings_rounded, const Color(0xFF37474F), _openSettings),
-      _Menu('PDF Export', 'preview first', Icons.picture_as_pdf_rounded, const Color(0xFF42A5F5), _openFinalCaseDocuments),
-      _Menu('Final CD', 'investigation summary', Icons.verified_rounded, const Color(0xFFC2188B), _openCdWriter),
-      _Menu('Sketch Map', 'builder/index', Icons.map_rounded, const Color(0xFF006B57), _openSketchMap),
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: items.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 14,
-          crossAxisSpacing: 12,
-          childAspectRatio: .78,
+  Widget _welcomeCard() {
+    final name = _profile.name.trim().isEmpty ? L10n.t('অফিসার', 'Officer') : _profile.name.trim();
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [InvestigoUi.primaryDark, InvestigoUi.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        itemBuilder: (_, i) => HomeGridCard(
-          title: items[i].title,
-          subtitle: items[i].subtitle,
-          icon: items[i].icon,
-          color: items[i].color,
-          onTap: items[i].onTap,
-        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x302447D8),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(.14),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Icon(Icons.local_police_rounded, color: Colors.white, size: 30),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  L10n.t('স্বাগতম, $name', 'Welcome, $name'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_profile.rank} • ${_profile.policeStation}\n${_profile.district}',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _openSettings,
+            color: Colors.white,
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _welcomeBlock() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+  Widget _primaryGrid() {
+    final items = <InvestigoActionCard>[
+      InvestigoActionCard(
+        icon: Icons.add_box_outlined,
+        title: L10n.t('কেস এন্ট্রি', 'Case Entry'),
+        subtitle: L10n.t('নতুন মামলা লিখুন', 'Create a new case'),
+        onTap: _newCase,
+      ),
+      InvestigoActionCard(
+        icon: Icons.menu_book_outlined,
+        title: L10n.t('সিডি তৈরি', 'Create CD'),
+        subtitle: L10n.t('ধাপে ধাপে Case Diary', 'Guided Case Diary'),
+        onTap: _openCdWriter,
+        iconColor: InvestigoUi.accent,
+      ),
+      InvestigoActionCard(
+        icon: Icons.groups_outlined,
+        title: L10n.t('সাক্ষীর বিবৃতি', 'Statements'),
+        subtitle: L10n.t('একাধিক সাক্ষী যোগ করুন', 'Add multiple witnesses'),
+        onTap: _openStatements,
+      ),
+      InvestigoActionCard(
+        icon: Icons.description_outlined,
+        title: L10n.t('ফর্ম ও নোটিশ', 'Forms & Notices'),
+        subtitle: L10n.t('সহজ guided form', 'Simple guided forms'),
+        onTap: _openForms,
+        iconColor: const Color(0xFF8B5CF6),
+      ),
+      InvestigoActionCard(
+        icon: Icons.map_outlined,
+        title: L10n.t('স্কেচ ম্যাপ', 'Sketch Map'),
+        subtitle: L10n.t('Auto draft + approval', 'Auto draft + approval'),
+        onTap: _openSketchMap,
+        iconColor: const Color(0xFF0E8A72),
+      ),
+      InvestigoActionCard(
+        icon: Icons.search_rounded,
+        title: L10n.t('কেস খুঁজুন', 'Search Case'),
+        subtitle: L10n.t('নাম/নম্বর/ধারা', 'Name / No. / section'),
+        onTap: _openCaseRegister,
+      ),
+      InvestigoActionCard(
+        icon: Icons.fact_check_outlined,
+        title: L10n.t('ফাইনাল রিপোর্ট / CS', 'Final Report / CS'),
+        subtitle: L10n.t('Last CD থেকে তৈরি', 'Generate from final CD'),
+        onTap: _openFinalCaseDocuments,
+        iconColor: const Color(0xFFE67E22),
+      ),
+      InvestigoActionCard(
+        icon: Icons.gavel_outlined,
+        title: L10n.t('BNS / BNSS', 'BNS / BNSS'),
+        subtitle: L10n.t('ধারা ও সহজ ব্যাখ্যা', 'Sections & easy meaning'),
+        onTap: _openLegalReference,
+        iconColor: const Color(0xFF475467),
+      ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: .98,
+      ),
+      itemCount: items.length,
+      itemBuilder: (_, index) => items[index],
+    );
+  }
+
+  Widget _moreTools() {
+    final tools = <_SimpleTool>[
+      _SimpleTool(Icons.manage_search_outlined, L10n.t('তদন্ত', 'Investigation'), _openInvestigation),
+      _SimpleTool(Icons.inventory_2_outlined, L10n.t('প্রমাণ', 'Evidence'), _openEvidence),
+      _SimpleTool(Icons.checklist_outlined, L10n.t('চেকলিস্ট', 'Checklist'), _openInvestigationChecklist),
+      _SimpleTool(Icons.policy_outlined, 'SOP', _openSopCompliance),
+      _SimpleTool(Icons.summarize_outlined, L10n.t('রিপোর্ট', 'Reports'), _openReport),
+      _SimpleTool(Icons.document_scanner_outlined, L10n.t('কেস পার্সার', 'Case Parser'), _openCaseParser),
+      _SimpleTool(Icons.assignment_outlined, 'UD', _openUdCase),
+      _SimpleTool(Icons.table_chart_outlined, 'NCR', _openNcr),
+      _SimpleTool(Icons.event_available_outlined, L10n.t('কমপ্লায়েন্স', 'Compliance'), _openCompliance),
+      _SimpleTool(Icons.backup_outlined, L10n.t('ব্যাকআপ', 'Backup'), _openBackup),
+      _SimpleTool(Icons.dns_outlined, L10n.t('ব্যাকএন্ড', 'Backend'), _openBackendSettings),
+      _SimpleTool(Icons.new_releases_outlined, L10n.t('রিলিজ', 'Release'), _openReleaseCenter),
+      _SimpleTool(Icons.verified_user_outlined, L10n.t('লাইসেন্স', 'License'), _openLicense),
+    ];
+
+    return Container(
+      decoration: InvestigoUi.cardDecoration(),
+      padding: const EdgeInsets.all(14),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Welcome to Investigation Desk', textAlign: TextAlign.center, style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, color: AppTheme.deepGreen)),
-          const SizedBox(height: 14),
-          if (_cases.isEmpty)
-            const Text('Create your first case to generate CD, statement, forms and IF5.', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600))
-          else
-            ..._cases.take(3).map((file) => Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    leading: const CircleAvatar(backgroundColor: AppTheme.deepGreen, foregroundColor: Colors.white, child: Icon(Icons.folder_open)),
-                    title: Text(file.displayTitle, style: const TextStyle(fontWeight: FontWeight.w900)),
-                    subtitle: Text('Sections: ${file.sections}\nComplainant: ${file.complainantName}', maxLines: 2),
-                    isThreeLine: true,
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _openCase(file),
-                  ),
-                )),
+          Text(
+            L10n.t('আরও দরকারি কাজ', 'More tools'),
+            style: const TextStyle(
+              color: InvestigoUi.text,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...tools.map(
+            (tool) => ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: InvestigoUi.background,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(tool.icon, color: InvestigoUi.primary, size: 21),
+              ),
+              title: Text(
+                tool.title,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: tool.onTap,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _Menu {
-  final String title;
-  final String subtitle;
+class _SimpleTool {
   final IconData icon;
-  final Color color;
+  final String title;
   final VoidCallback onTap;
-  _Menu(this.title, this.subtitle, this.icon, this.color, this.onTap);
+
+  const _SimpleTool(this.icon, this.title, this.onTap);
 }

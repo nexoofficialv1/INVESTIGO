@@ -135,3 +135,58 @@ Completed mobile CD preview/PDF/DOC reliability and non-blocking translation fal
 
 Later phases may add multi-window editing, searchable register tables,
 installer signing and PostgreSQL synchronization.
+
+## v204 — BNS/BNSS Legal Search — Completed
+- Offline BNS + BNSS section/subsection index
+- IPC/CrPC correspondence search
+- Verified official core text
+- Bengali helper explanation / on-device translation
+- Case Detail + CD Builder law shortcuts
+
+## v205 — English + বাংলা BNSS Forms Library — Completed
+- Section 35(3) appearance notice
+- arrest memorandum reference form
+- Section 94 production notice/order
+- Section 179 witness attendance notice
+- Section 49 personal search memorandum
+- medical examination requisition
+- FSL forwarding reference
+- Section 193(3)(ii) progress intimation
+- Law Search shortcut and CD auto-link
+
+## v206 — Structured Bilingual Forms — Completed
+- Date/time selectors
+- recipient/witness/person particulars
+- arrest-ground checklist
+- repeating document/article/exhibit/progress rows
+- service/acknowledgement tracking
+- final validation
+- date/time/place-aware CD linkage
+
+## v207 — Simple Modern UI/UX Foundation — Completed
+- Modern dashboard
+- Simple case register/search
+- Modern case workspace
+- One-question CD wizard
+- One-step-at-a-time structured forms
+- Large touch targets and collapsed advanced panels
+
+## v208 — Critical Integrity Fix — Completed in source patch
+- Stage-gated UD workflow
+- PM-day/previous-day challan chronology validation
+- PM report receipt gate before UD Final Form
+- No automatic foul-play/cause-of-death conclusion
+- Correct dispatch/PM fields in lifecycle documents
+- Case duplicate check + required facts + date/time pickers
+- Case Entry no longer asks investigation-action questions
+- Report templates no longer assert unverified investigation actions
+- Stable report draft IDs + reopen saved v208 reports
+
+## v208.1 — Official UD Format Preservation Hotfix
+- Restored detailed Inquest output without changing lifecycle gating
+- Restored 10-column W.B. Form 5371 Dead Body Challan
+- Restored W.B. Form 5370 / P.R.B. Form 53 Final Report layout
+- Added separate spot-visit date/time for Final Report item 3
+- Preserved full Inquest field fillability under a collapsed simple-officer section
+- Corrected Means of Dispatch mapping without altering the printed 5371 column
+

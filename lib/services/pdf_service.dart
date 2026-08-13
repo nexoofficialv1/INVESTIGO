@@ -549,6 +549,23 @@ class PdfService {
         await translator.translateToCurrentLanguage(statement.statementType);
     final statementBody =
         await translator.translateToCurrentLanguage(statement.body);
+    final recordedPlace = statement.recordedPlace.trim().isEmpty
+        ? ''
+        : await translator.translateToCurrentLanguage(statement.recordedPlace);
+    final recorder = statement.recordedBy.trim().isNotEmpty
+        ? statement.recordedBy.trim()
+        : '${officer.rank} ${officer.name}'.trim();
+    final metadata = <String>[
+      if (statement.linkedFromCd && statement.sourceCdNumber > 0)
+        '${_t('উৎস সিডি', 'Source CD')}: CD-${statement.sourceCdNumber}',
+      if (statement.recordedDate.trim().isNotEmpty)
+        '${_t('লিপিবদ্ধের তারিখ', 'Recorded Date')}: ${_officialDate(statement.recordedDate)}',
+      if (statement.recordedTime.trim().isNotEmpty)
+        '${_t('লিপিবদ্ধের সময়', 'Recorded Time')}: ${statement.recordedTime.trim()}',
+      if (recordedPlace.isNotEmpty)
+        '${_t('লিপিবদ্ধের স্থান', 'Recorded Place')}: $recordedPlace',
+    ];
+
     final doc = pw.Document(theme: await _pdfTheme());
     doc.addPage(
       pw.MultiPage(
@@ -567,8 +584,19 @@ class PdfService {
           ),
           pw.SizedBox(height: 8),
           pw.Text('${_t('সাক্ষীর নাম', 'Name of Witness')}: $witnessName'),
-          pw.Text('${_t('সাক্ষীর বিবরণ', 'Witness Details')}: $witnessDetails'),
-          pw.Text('${_t('বিবৃতির ধরন', 'Statement Type')}: $statementType'),
+          if (witnessDetails.trim().isNotEmpty)
+            pw.Text('${_t('সাক্ষীর বিবরণ', 'Witness Details')}: $witnessDetails'),
+          if (statementType.trim().isNotEmpty)
+            pw.Text('${_t('বিবৃতির ধরন', 'Statement Type')}: $statementType'),
+          if (metadata.isNotEmpty) ...[
+            pw.SizedBox(height: 8),
+            ...metadata.map(
+              (line) => pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 10.5),
+              ),
+            ),
+          ],
           pw.SizedBox(height: 14),
           pw.Text(
             statementBody,
@@ -576,25 +604,17 @@ class PdfService {
             textAlign: pw.TextAlign.justify,
           ),
           pw.SizedBox(height: 30),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                _t(
-                  'সাক্ষীর স্বাক্ষর/এলটিআই/আরটিআই',
-                  'Signature/LTI/RTI of witness',
-                ),
-              ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text(_t('লিপিবদ্ধ করেছেন', 'Recorded by')),
-                  pw.SizedBox(height: 24),
-                  pw.Text('${officer.rank} ${officer.name}'),
-                  pw.Text(officer.policeStation),
-                ],
-              ),
-            ],
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text(_t('লিপিবদ্ধ করেছেন', 'Recorded by')),
+                pw.SizedBox(height: 24),
+                pw.Text(recorder),
+                pw.Text(officer.policeStation),
+              ],
+            ),
           ),
         ],
       ),

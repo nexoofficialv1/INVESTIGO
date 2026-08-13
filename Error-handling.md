@@ -87,3 +87,22 @@ Desktop launchers guard case-dependent actions when no case exists and show a
 user-facing message instead of opening an invalid screen. CI verifies that the
 Windows executable exists before packaging. Failed validation, analysis, tests,
 build or executable checks stop the workflow and prevent artifact upload.
+
+## v204 — Legal search
+Search is fully local. If the Bengali ML translation model is unavailable, the authoritative/original English result remains visible and document workflows are not blocked.
+
+## v205 — Bilingual forms
+If a template has no section reference in the supplied source (for example the medical requisition), INVESTIGO does not invent one. Law Search buttons appear only where a section reference is known.
+
+## v206
+Structured form validation reports missing mandatory fields and repeating-row requirements before Final Save. Draft preview remains available so an officer can inspect formatting before all operational facts are complete.
+
+## v207 — Human-readable validation
+Primary screens surface short officer-facing messages and defer technical detail. Required information remains validation-gated before final generation.
+
+## v208 — Chronology gates
+Dead Body Challan after the planned PM date is blocked. A challan more than one day before the planned PM date produces a visible confirmation warning. Final Form is blocked before PM report receipt or while a required other report remains pending. Duplicate PS Case numbers are blocked.
+
+## v208.1
+Final Form blocks until separate spot-visit date/time are recorded. Spot visit cannot be later than the start of inquest. Challan/body dispatch cannot predate the inquest date or occur after the planned PM date.
+

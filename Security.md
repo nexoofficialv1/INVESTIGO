@@ -72,3 +72,22 @@ The portable build stores application data in the platform application-data
 location selected by Flutter plugins. No administrator privilege is required.
 Only trusted GitHub Actions artifacts should be executed. Code signing,
 installer signing and managed-device deployment remain future release gates.
+
+## v204 — Legal-source integrity
+The UI distinguishes official verified statutory material from comparison/index notes. Helper Bengali machine translation is labelled non-official. Draft-bill text must not override enacted section numbering.
+
+## v205 — Form provenance
+A reference/sample form is not silently promoted to statutory text. The UI exposes source/provenance notes; Bengali helper forms are not labelled as official statutory translations unless separately authenticated. Officer-entered facts remain reviewable before Final Save.
+
+## v206 — Officer validation
+Final Save is blocked when mandatory structured facts are incomplete. The software must never auto-select arrest grounds, invent service/acknowledgement, fill seized articles, infer medical/FSL findings, or guess the unlabeled row 5 of the supplied arrest-memo reference.
+
+## v207 — UX safety
+Simplification must not silently auto-select investigation facts, legal conclusions, service status, arrest grounds or evidence. Suggestions stay optional and visibly separate from officer-entered facts.
+
+## v208 — Record integrity
+INVESTIGO must never infer cause of death, foul play, completion of inquest, PM completion, PM report receipt, or final investigation result. Each is an explicit officer-confirmed stage. Pending viscera/FSL/chemical/other reports block UD finalization.
+
+## v208.1 — Official-document integrity
+Official form structure is immutable at the lifecycle layer. Workflow metadata must not appear as extra printed headings, columns or debug notes. Final-report narrative may be assembled only from explicit PM-report fields and officer-entered final summary/foul-play assessment.
+

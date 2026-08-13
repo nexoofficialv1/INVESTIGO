@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/case_file.dart';
 import '../models/officer_profile.dart';
 import '../services/local_store_service.dart';
-import '../widgets/app_section_card.dart';
-import '../widgets/form_helpers.dart';
+import '../widgets/investigo_ui.dart';
 
 class CaseFormScreen extends StatefulWidget {
   final OfficerProfile profile;
@@ -17,8 +16,7 @@ class CaseFormScreen extends StatefulWidget {
 }
 
 class _CaseFormScreenState extends State<CaseFormScreen> {
-  final LocalStoreService _store = LocalStoreService();
-
+  final _store = LocalStoreService();
   late CaseFile _base;
   late final TextEditingController psCaseNo;
   late final TextEditingController caseDate;
@@ -31,20 +29,6 @@ class _CaseFormScreenState extends State<CaseFormScreen> {
   late final TextEditingController victim;
   late final TextEditingController accused;
   late final TextEditingController gist;
-  late final TextEditingController tookUpDate;
-  late final TextEditingController poDetails;
-  late final TextEditingController sketchDetails;
-  late final TextEditingController witnessDetails;
-  late final TextEditingController medicalDetails;
-  late final TextEditingController seizureDetails;
-  late final TextEditingController evidenceDetails;
-
-  bool visitedPo = false;
-  bool sketchPrepared = false;
-  bool witnessExamined = false;
-  bool medicalRequired = false;
-  bool seizureRequired = false;
-  bool evidenceRequired = false;
 
   @override
   void initState() {
@@ -61,53 +45,103 @@ class _CaseFormScreenState extends State<CaseFormScreen> {
     victim = TextEditingController(text: _base.victimName);
     accused = TextEditingController(text: _base.accusedName);
     gist = TextEditingController(text: _base.firGist);
-
-    final start = _base.investigationStart;
-    tookUpDate = TextEditingController(text: start.tookUpDate);
-    poDetails = TextEditingController(text: start.poDetails);
-    sketchDetails = TextEditingController(text: start.sketchDetails);
-    witnessDetails = TextEditingController(text: start.witnessDetails);
-    medicalDetails = TextEditingController(text: start.medicalDetails);
-    seizureDetails = TextEditingController(text: start.seizureDetails);
-    evidenceDetails = TextEditingController(text: start.evidenceDetails);
-    visitedPo = start.visitedPo;
-    sketchPrepared = start.sketchPrepared;
-    witnessExamined = start.witnessExamined;
-    medicalRequired = start.medicalRequired;
-    seizureRequired = start.seizureRequired;
-    evidenceRequired = start.evidenceRequired;
   }
 
   @override
   void dispose() {
-    for (final c in [psCaseNo, caseDate, sections, crimeHead, po, dto, dtr, complainant, victim, accused, gist, tookUpDate, poDetails, sketchDetails, witnessDetails, medicalDetails, seizureDetails, evidenceDetails]) {
+    for (final c in [psCaseNo, caseDate, sections, crimeHead, po, dto, dtr, complainant, victim, accused, gist]) {
       c.dispose();
     }
     super.dispose();
   }
 
+  Future<String?> _pickDate(String current) async {
+    final parsed = DateTime.tryParse(current.split(' ').first);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: parsed ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(DateTime.now().year + 2),
+    );
+    if (picked == null) return null;
+    return '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<String?> _pickTime(String current) async {
+    final raw = current.contains(' ') ? current.split(' ').last : current;
+    final parts = raw.split(':');
+    final initial = parts.length == 2
+        ? TimeOfDay(hour: int.tryParse(parts[0]) ?? TimeOfDay.now().hour, minute: int.tryParse(parts[1]) ?? TimeOfDay.now().minute)
+        : TimeOfDay.now();
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked == null) return null;
+    return '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickDateOnly(TextEditingController controller) async {
+    final value = await _pickDate(controller.text);
+    if (value != null) setState(() => controller.text = value);
+  }
+
+  Future<void> _pickDateTime(TextEditingController controller) async {
+    final date = await _pickDate(controller.text);
+    if (date == null || !mounted) return;
+    final time = await _pickTime(controller.text);
+    if (time == null) return;
+    setState(() => controller.text = '$date $time');
+  }
+
+  Widget _text(TextEditingController controller, String label, {int lines = 1}) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: TextField(
+          controller: controller,
+          maxLines: lines,
+          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        ),
+      );
+
+  Widget _picker(TextEditingController controller, String label, {bool dateOnly = false}) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: TextField(
+          controller: controller,
+          readOnly: true,
+          onTap: () => dateOnly ? _pickDateOnly(controller) : _pickDateTime(controller),
+          decoration: InputDecoration(
+            labelText: label,
+            suffixIcon: Icon(dateOnly ? Icons.calendar_month_outlined : Icons.event_available_outlined),
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      );
+
+  List<String> _errors() {
+    final errors = <String>[];
+    if (psCaseNo.text.trim().isEmpty) errors.add('PS Case No. দিন');
+    if (caseDate.text.trim().isEmpty) errors.add('Case Date দিন');
+    if (sections.text.trim().isEmpty) errors.add('Sections of Law দিন');
+    if (po.text.trim().isEmpty) errors.add('Place of Occurrence দিন');
+    if (dtr.text.trim().isEmpty) errors.add('Date & Time of Reporting দিন');
+    if (gist.text.trim().isEmpty) errors.add('FIR-এর Brief Gist দিন');
+    return errors;
+  }
+
   Future<void> _save() async {
-    if (psCaseNo.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PS Case No. required')));
+    final errors = _errors();
+    if (errors.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errors.first)));
       return;
     }
 
-    final start = InvestigationStart(
-      ioName: '${widget.profile.rank} ${widget.profile.name}',
-      tookUpDate: tookUpDate.text.trim(),
-      visitedPo: visitedPo,
-      poDetails: poDetails.text.trim(),
-      sketchPrepared: sketchPrepared,
-      sketchDetails: sketchDetails.text.trim(),
-      witnessExamined: witnessExamined,
-      witnessDetails: witnessDetails.text.trim(),
-      medicalRequired: medicalRequired,
-      medicalDetails: medicalDetails.text.trim(),
-      seizureRequired: seizureRequired,
-      seizureDetails: seizureDetails.text.trim(),
-      evidenceRequired: evidenceRequired,
-      evidenceDetails: evidenceDetails.text.trim(),
-    );
+    final all = await _store.loadCases();
+    final normalized = psCaseNo.text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+    final duplicate = all.any((item) =>
+        item.id != _base.id &&
+        item.psCaseNo.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '') == normalized);
+    if (duplicate) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('এই PS Case No. আগে থেকেই আছে। Existing case খুলে Edit করুন।')));
+      return;
+    }
 
     final updated = _base.copyWith(
       psCaseNo: psCaseNo.text.trim(),
@@ -121,7 +155,9 @@ class _CaseFormScreenState extends State<CaseFormScreen> {
       victimName: victim.text.trim(),
       accusedName: accused.text.trim(),
       firGist: gist.text.trim(),
-      investigationStart: start,
+      // Investigation facts are deliberately not collected here in v208.
+      // They remain preserved for older cases and are entered through the CD workflow.
+      investigationStart: _base.investigationStart,
     );
     await _store.saveCase(updated);
     if (!mounted) return;
@@ -132,79 +168,71 @@ class _CaseFormScreenState extends State<CaseFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.existing == null ? 'Create Case' : 'Edit Case')),
+      backgroundColor: InvestigoUi.background,
+      appBar: AppBar(
+        backgroundColor: InvestigoUi.background,
+        surfaceTintColor: Colors.transparent,
+        title: Text(widget.existing == null ? 'নতুন মামলা / New Case' : 'মামলা Edit করুন'),
+      ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save), label: const Text('Save Case')),
+          child: FilledButton.icon(
+            style: InvestigoUi.primaryButtonStyle(),
+            onPressed: _save,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Save Case'),
+          ),
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
         children: [
-          AppSectionCard(
-            title: 'Step 1: Basic Details',
-            icon: Icons.assignment,
-            child: Column(
-              children: [
-                FormHelpers.textField(controller: psCaseNo, label: 'PS Case No. / Year'),
-                FormHelpers.textField(controller: caseDate, label: 'Case Date'),
-                FormHelpers.textField(controller: sections, label: 'Sections of Law'),
-                FormHelpers.textField(controller: crimeHead, label: 'Crime Head / Case Type'),
-              ],
-            ),
+          const InvestigoPageTitle(
+            title: 'মামলার মূল তথ্য',
+            subtitle: 'তদন্তের কাজ এখানে নয় — CD Wizard-এ এক ধাপ করে হবে',
           ),
-          AppSectionCard(
-            title: 'Step 2: Incident Details',
-            icon: Icons.place,
-            child: Column(
-              children: [
-                FormHelpers.textField(controller: po, label: 'Place of Occurrence', maxLines: 2),
-                FormHelpers.textField(controller: dto, label: 'Date & Time of Occurrence'),
-                FormHelpers.textField(controller: dtr, label: 'Date & Time of Reporting'),
-                FormHelpers.textField(controller: gist, label: 'Brief Gist of FIR', maxLines: 5),
-              ],
-            ),
-          ),
-          AppSectionCard(
-            title: 'Step 3: Parties',
-            icon: Icons.people,
-            child: Column(
-              children: [
-                FormHelpers.textField(controller: complainant, label: 'Complainant Details', maxLines: 2),
-                FormHelpers.textField(controller: victim, label: 'Victim Details', maxLines: 2),
-                FormHelpers.textField(controller: accused, label: 'Accused / Suspect Details', maxLines: 3),
-              ],
-            ),
-          ),
-          AppSectionCard(
-            title: 'Step 4: Investigation Start',
-            subtitle: 'Yes হলে details field open হবে। এই data থেকে CD-I auto draft তৈরি হবে।',
-            icon: Icons.manage_search,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('IO Name: ${widget.profile.rank} ${widget.profile.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                FormHelpers.textField(controller: tookUpDate, label: 'Took up investigation date'),
-                FormHelpers.yesNoTile(title: 'Visited PO?', value: visitedPo, onChanged: (v) => setState(() => visitedPo = v)),
-                if (visitedPo) FormHelpers.textField(controller: poDetails, label: 'Details of PO visit', maxLines: 4),
-                FormHelpers.yesNoTile(title: 'Rough sketch map prepared?', value: sketchPrepared, onChanged: (v) => setState(() => sketchPrepared = v)),
-                if (sketchPrepared) FormHelpers.textField(controller: sketchDetails, label: 'Rough sketch map details', maxLines: 3),
-                FormHelpers.yesNoTile(title: 'Witness examined?', value: witnessExamined, onChanged: (v) => setState(() => witnessExamined = v)),
-                if (witnessExamined) FormHelpers.textField(controller: witnessDetails, label: 'Witness examination details', maxLines: 4),
-                FormHelpers.yesNoTile(title: 'Medical required?', value: medicalRequired, onChanged: (v) => setState(() => medicalRequired = v)),
-                if (medicalRequired) FormHelpers.textField(controller: medicalDetails, label: 'Medical / BHT / Injury details', maxLines: 4),
-                FormHelpers.yesNoTile(title: 'Seizure required?', value: seizureRequired, onChanged: (v) => setState(() => seizureRequired = v)),
-                if (seizureRequired) FormHelpers.textField(controller: seizureDetails, label: 'Seizure details', maxLines: 4),
-                FormHelpers.yesNoTile(title: 'Evidence available/required?', value: evidenceRequired, onChanged: (v) => setState(() => evidenceRequired = v)),
-                if (evidenceRequired) FormHelpers.textField(controller: evidenceDetails, label: 'Evidence details (physical/digital/CCTV/document etc.)', maxLines: 4),
-              ],
-            ),
-          ),
-          const SizedBox(height: 80),
+          const SizedBox(height: 14),
+          _card('1', 'Case Details', [
+            _text(psCaseNo, 'PS Case No. / Year'),
+            _picker(caseDate, 'Case Date', dateOnly: true),
+            _text(sections, 'Sections of Law'),
+            _text(crimeHead, 'Crime Head / Case Type'),
+          ]),
+          const SizedBox(height: 12),
+          _card('2', 'Incident', [
+            _text(po, 'Place of Occurrence', lines: 2),
+            _picker(dto, 'Date & Time of Occurrence'),
+            _picker(dtr, 'Date & Time of Reporting'),
+            _text(gist, 'Brief Gist of FIR', lines: 6),
+          ]),
+          const SizedBox(height: 12),
+          _card('3', 'People', [
+            _text(complainant, 'Complainant / Informant Details', lines: 2),
+            _text(victim, 'Victim Details, if any', lines: 2),
+            _text(accused, 'Accused / Suspect Details', lines: 3),
+          ]),
         ],
       ),
     );
   }
+
+  Widget _card(String no, String title, List<Widget> children) => Container(
+        decoration: InvestigoUi.cardDecoration(),
+        padding: const EdgeInsets.all(15),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(color: InvestigoUi.primary.withOpacity(.09), borderRadius: BorderRadius.circular(12)),
+              child: Center(child: Text(no, style: const TextStyle(color: InvestigoUi.primary, fontWeight: FontWeight.w900))),
+            ),
+            const SizedBox(width: 10),
+            Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          ]),
+          const SizedBox(height: 14),
+          ...children,
+        ]),
+      );
 }

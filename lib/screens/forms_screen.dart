@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/case_file.dart';
+import '../widgets/structured_bnss_form_panel.dart';
+import '../services/structured_bnss_forms_service.dart';
+import '../models/structured_bnss_form.dart';
+import 'legal_reference_screen.dart';
+import '../services/bilingual_bnss_forms_service.dart';
+import '../models/bilingual_bnss_form.dart';
 import '../models/form_notice.dart';
 import '../models/officer_profile.dart';
 import '../models/pending_cd_action.dart';
@@ -24,6 +30,8 @@ class FormsScreen extends StatefulWidget {
 class _FormsScreenState extends State<FormsScreen> {
   final LocalStoreService _store = LocalStoreService();
   final FormsGeneratorService _generator = FormsGeneratorService();
+  final BilingualBnssFormsService _bilingualForms = BilingualBnssFormsService();
+  final StructuredBnssFormsService _structuredFormFactory = StructuredBnssFormsService();
   List<FormNotice> forms = [];
   List<CaseFile> _cases = [];
   late CaseFile _selectedCase;
@@ -59,6 +67,104 @@ class _FormsScreenState extends State<FormsScreen> {
     final list = await _store.loadForms(file.id);
     if (!mounted) return;
     setState(() => forms = list);
+  }
+
+  Future<BnssFormLanguage?> _chooseBilingualFormLanguage(
+    BilingualBnssFormTemplate template,
+  ) async {
+    return showModalBottomSheet<BnssFormLanguage>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(template.titleEn),
+              subtitle: const Text('Generate this form in English'),
+              onTap: () => Navigator.pop(context, BnssFormLanguage.english),
+            ),
+            ListTile(
+              leading: const Icon(Icons.translate),
+              title: Text(template.titleBn),
+              subtitle: const Text('এই ফর্মটি বাংলায় তৈরি করুন'),
+              onTap: () => Navigator.pop(context, BnssFormLanguage.bengali),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createBilingualForm(BilingualBnssFormTemplate template) async {
+    final language = await _chooseBilingualFormLanguage(template);
+    if (language == null) return;
+    final storageId = template.storageId(language);
+    final structuredState = _structuredFormFactory.initialState(
+      templateId: storageId,
+      officer: widget.profile,
+      caseFile: _selectedCase,
+    );
+    final body = _structuredFormFactory.renderBody(
+      templateId: storageId,
+      officer: widget.profile,
+      caseFile: _selectedCase,
+      state: structuredState,
+    );
+    final form = FormNotice.create(
+      caseId: _selectedCase.id,
+      templateId: storageId,
+      title: template.title(language),
+      body: body,
+      workflowData: structuredState.toJson(),
+    );
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FormEditorScreen(
+          profile: widget.profile,
+          caseFile: _selectedCase,
+          form: form,
+        ),
+      ),
+    );
+    await _load();
+  }
+
+  Future<void> _openBilingualFormLaw(BilingualBnssFormTemplate template) async {
+    if (template.sectionRef.trim().isEmpty) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalReferenceScreen(
+          initialQuery: 'BNSS ${template.sectionRef}',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showBilingualFormSource(BilingualBnssFormTemplate template) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(template.titleEn),
+        content: Text(
+          [
+            if (template.sectionRef.isNotEmpty) 'BNSS: ${template.sectionRef}',
+            if (template.oldLawRef.isNotEmpty) 'Previous law reference: ${template.oldLawRef}',
+            if (template.sourcePage.isNotEmpty) template.sourcePage,
+            template.sourceNote,
+            '',
+            'English and Bengali are separate editable INVESTIGO templates. Bengali helper wording is not represented as an official statutory translation unless separately authenticated.',
+          ].where((e) => e.isNotEmpty).join('\n'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        ],
+      ),
+    );
   }
 
   Future<void> _create(FormTemplateInfo template) async {
@@ -122,7 +228,44 @@ class _FormsScreenState extends State<FormsScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            Text('Generate New', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text('BNSS Bilingual Forms', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('English + বাংলা • case data auto-fill • law shortcut • final save করলে CD-তে action link করা যাবে.'),
+            const SizedBox(height: 8),
+            ...BilingualBnssFormsService.templates.map((template) => Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.translate_rounded),
+                    title: Text(template.titleEn, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text([
+                      template.titleBn,
+                      if (template.sectionRef.isNotEmpty) 'BNSS ${template.sectionRef}',
+                      template.sourcePage,
+                    ].where((e) => e.isNotEmpty).join(' • ')),
+                    trailing: SizedBox(
+                      width: template.sectionRef.isEmpty ? 92 : 136,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Template source / provenance',
+                            onPressed: () => _showBilingualFormSource(template),
+                            icon: const Icon(Icons.info_outline),
+                          ),
+                          if (template.sectionRef.isNotEmpty)
+                            IconButton(
+                              tooltip: 'Open BNSS section',
+                              onPressed: () => _openBilingualFormLaw(template),
+                              icon: const Icon(Icons.gavel_rounded),
+                            ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                    ),
+                    onTap: () => _createBilingualForm(template),
+                  ),
+                )),
+            const SizedBox(height: 18),
+            Text('Existing / Other Forms', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             ...FormsGeneratorService.templates.map((template) => Card(
                   child: ListTile(
@@ -169,6 +312,8 @@ class FormEditorScreen extends StatefulWidget {
 
 class _FormEditorScreenState extends State<FormEditorScreen> {
   final LocalStoreService _store = LocalStoreService();
+  final StructuredBnssFormsService _structuredForms = StructuredBnssFormsService();
+  final BilingualBnssFormsService _bilingualFormLinker = BilingualBnssFormsService();
   late FormNotice _form;
   late final TextEditingController title;
   late final TextEditingController body;
@@ -642,9 +787,66 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
     return updated;
   }
 
+  bool get _isStructuredBnssForm => _structuredForms.supports(_form.templateId);
+
+  StructuredBnssFormState get _structuredState =>
+      StructuredBnssFormState.fromJson(_form.workflowData);
+
+  void _structuredFormChanged(
+    StructuredBnssFormState state,
+    String renderedBody,
+  ) {
+    body.text = renderedBody;
+    _form = _form.copyWith(
+      body: renderedBody,
+      workflowData: state.toJson(),
+    );
+  }
+
+  List<String> _structuredValidationErrors() {
+    if (!_isStructuredBnssForm) return const [];
+    return _structuredForms.validate(_form.templateId, _structuredState);
+  }
+
+  Future<bool> _ensureStructuredReadyForFinal() async {
+    final errors = _structuredValidationErrors();
+    if (errors.isEmpty) return true;
+    if (!mounted) return false;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Required form data incomplete'),
+        content: SizedBox(
+          width: 520,
+          child: ListView(
+            shrinkWrap: true,
+            children: errors.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text('• $e'),
+            )).toList(),
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Back to form'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
+
   String _today() => DateTime.now().toIso8601String().split('T').first;
 
   String _cdParagraphForForm(FormNotice form) {
+    if (_structuredForms.supports(form.templateId) && form.workflowData.isNotEmpty) {
+      return _structuredForms.cdParagraph(form);
+    }
+    final bilingualBase = form.templateId.split('__').first;
+    if (BilingualBnssFormsService.templates.any((e) => e.id == bilingualBase)) {
+      return _bilingualFormLinker.cdParagraphFor(form.templateId);
+    }
     final lower = form.title.toLowerCase();
     if (lower.contains('183')) {
       return 'Submitted prayer before the Ld. Court for recording statement u/s 183 BNSS in connection with this case.';
@@ -691,12 +893,16 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
     );
     if (mention != true) return;
 
+    final structured = _structuredForms.supports(form.templateId) && form.workflowData.isNotEmpty;
     final action = PendingCdAction.create(
       caseId: widget.caseFile.id,
       sourceType: 'form_notice',
       sourceId: form.id,
       title: form.title,
-      actionDate: _today(),
+      actionDate: structured ? _structuredForms.cdActionDate(form) : _today(),
+      entryTime: structured ? _structuredForms.cdActionTime(form) : '',
+      placeOfEntry: structured ? _structuredForms.cdPlace(form, widget.profile) : '',
+      synopsis: structured ? _structuredForms.cdSynopsis(form) : form.title,
       paragraph: _cdParagraphForForm(form),
     );
     await _store.savePendingCdAction(action);
@@ -738,6 +944,7 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
           buildPdf: () => PdfService().buildFormNoticePdf(officer: widget.profile, caseFile: widget.caseFile, form: previewForm),
           buildDoc: () => DocExportService().buildFormNoticeDoc(officer: widget.profile, caseFile: widget.caseFile, form: previewForm),
           onFinalSave: () async {
+            if (!await _ensureStructuredReadyForFinal()) return;
             final saved = await _save(finalSave: true, askCdMention: false);
             await _askMentionInCaseDiary(saved);
           },
@@ -747,6 +954,7 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
   }
 
   Future<void> _finalSave() async {
+    if (!await _ensureStructuredReadyForFinal()) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -785,14 +993,24 @@ class _FormEditorScreenState extends State<FormEditorScreen> {
           if (_form.isFinal)
             const Card(child: Padding(padding: EdgeInsets.all(14), child: Text('This form is final saved. Edit carefully if required.', style: TextStyle(fontWeight: FontWeight.bold)))),
           _structuredEntryModule(),
+          if (_isStructuredBnssForm) ...[
+            const SizedBox(height: 10),
+            StructuredBnssFormPanel(
+              key: ValueKey('structured_${_form.id}'),
+              profile: widget.profile,
+              caseFile: widget.caseFile,
+              form: _form,
+              onChanged: _structuredFormChanged,
+            ),
+          ],
           const SizedBox(height: 10),
           FormHelpers.textField(controller: title, label: 'Form Title'),
           TextField(
             controller: body,
             maxLines: 28,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               alignLabelWithHint: true,
-              labelText: 'Auto-filled form body — edit as required',
+              labelText: _isStructuredBnssForm ? 'Generated final body — optional manual correction' : 'Auto-filled form body — edit as required',
             ),
           ),
           const SizedBox(height: 90),
