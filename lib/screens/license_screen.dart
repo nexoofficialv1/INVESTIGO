@@ -195,7 +195,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
               const Text(
                 'লাইসেন্স নেওয়ার সময় এই code-টি দিন। License এই installation-এর জন্যই valid হবে।',
                 style: TextStyle(
-                  color: InvestigoUi.textMuted,
+                  color: InvestigoUi.muted,
                   height: 1.35,
                 ),
               ),
@@ -241,7 +241,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
               const Text(
                 'Signed yearly activation key paste করুন। Internet connection লাগবে না।',
                 style: TextStyle(
-                  color: InvestigoUi.textMuted,
+                  color: InvestigoUi.muted,
                   height: 1.35,
                 ),
               ),
