@@ -49,10 +49,11 @@ class LegalReferenceService {
           RegExp(r'^\d+').firstMatch(item.section)?.group(0) ?? sec;
       final title = _norm(item.titleEn);
       final old = _norm(item.oldSection);
+      final oldSectionTokens =
+          extractSectionTokens(item.oldSection).map(_norm).toSet();
       final note = _norm(item.comparisonNote);
-      final oldSectionMatch = oldHint &&
-          old.isNotEmpty &&
-          (q.contains(old) || tokens.contains(old));
+      final oldSectionMatch =
+          oldHint && oldSectionTokens.any(tokens.contains);
       var score = 0;
 
       if (q.isEmpty) {
