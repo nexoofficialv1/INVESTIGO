@@ -102,7 +102,6 @@ jobs:
                   <item name="android:windowSplashScreenBackground">#F6F8FC</item>
                   <item name="android:windowSplashScreenAnimatedIcon">@drawable/investigo_splash_icon</item>
                   <item name="android:windowSplashScreenIconBackgroundColor">#FFFFFF</item>
-                  <item name="android:postSplashScreenTheme">@style/NormalTheme</item>
                   <item name="android:windowLightStatusBar">true</item>
               </style>
           </resources>
