@@ -125,10 +125,14 @@ class PdfService {
             ),
           ];
 
-    const maxCharsPerPage = 2100;
+    // A CD page is a fixed pw.Page, not a flowing MultiPage. Keep every
+    // proceedings row comfortably below the available body height so a
+    // continued row cannot be clipped/blank on later pages.
+    const maxCharsPerRow = 1000;
+    const maxCharsPerPage = 1450;
     final normalized = <CdTableLine>[];
     for (final line in sourceLines) {
-      final parts = _splitTextSafely(line.proceedings, maxCharsPerPage);
+      final parts = _splitTextSafely(line.proceedings, maxCharsPerRow);
       for (var i = 0; i < parts.length; i++) {
         normalized.add(
           CdTableLine(
@@ -176,6 +180,11 @@ class PdfService {
         )
         .toList();
   }
+
+  // Regression-test hook for multi-page CD planning. Production rendering
+  // continues to use the private planner above.
+  List<CdEntry> splitCdIntoPageChunksForTest(CdEntry cd) =>
+      _splitCdIntoPageChunks(cd);
 
   List<String> _splitTextSafely(String text, int maxChars) {
     final clean = text.trim();
