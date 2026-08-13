@@ -136,3 +136,8 @@ UD documents are stage-gated: registration → Section 194 inquest/surathal → 
 ## v208.1 — Official UD Format Preservation
 The v208 lifecycle remains the source of stage/state and chronology, but UD printing is adapter-based. Inquest delegates to the established detailed INQUEST FORM renderer. Dead Body Challan delegates to the established W.B. Form No. 5371 / P.R.B. Form No. 54, Rule 252 renderer. UD Final Report keeps the established W.B. Form No. 5370 / P.R.B. Form No. 53, Rule 276 layout while substituting only officer-confirmed PM/final facts and corrected spot-visit/final-dispatch times. Lifecycle/debug notes and replacement columns are prohibited in official outputs.
 
+## v209.1 — Offline Product Gate
+- Startup sequence is Splash -> Offline License Gate -> Officer Profile -> Workspace.
+- Case creation exposes Manual Entry and Case Parser as first-class paths.
+- Licensing uses Ed25519 signatures; only the public verification key ships in the app.
+- Runtime operation remains offline; no license server is required.

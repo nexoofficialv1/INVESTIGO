@@ -91,3 +91,13 @@ INVESTIGO must never infer cause of death, foul play, completion of inquest, PM 
 ## v208.1 — Official-document integrity
 Official form structure is immutable at the lifecycle layer. Workflow metadata must not appear as extra printed headings, columns or debug notes. Final-report narrative may be assembled only from explicit PM-report fields and officer-entered final summary/foul-play assessment.
 
+## v209.1 offline licensing
+- Ed25519 public-key verification is used for activation.
+- The private signing key is NOT part of the app/repository.
+- License is bound to the locally generated installation code.
+- Clock rollback greater than tolerance blocks access until system date/time is corrected.
+- Offline trial markers reset after uninstall/data wipe by design.
+- Trial expiry locks the entire app to activation-only mode; backup/export/restore are unavailable.
+- Android automatic app-data backup/restore is disabled so reinstall starts with empty app-private data.
+- Trial backups are installation-bound and cannot be restored into a fresh reinstall trial.
+- License/trial preference keys are excluded from backup payloads.

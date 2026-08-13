@@ -77,12 +77,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   CaseFile? get _latestCase => _cases.isEmpty ? null : _cases.first;
 
-  Future<void> _newCase() async {
+  Future<void> _openManualCase() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => CaseFormScreen(profile: _profile)),
     );
     await _load();
+  }
+
+  Future<void> _newCase() async {
+    final method = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InvestigoPageTitle(
+                title: L10n.t('নতুন মামলা কীভাবে তৈরি করবেন?', 'Create a new case'),
+                subtitle: L10n.t(
+                  'নিজে লিখুন অথবা FIR/complaint text থেকে তথ্য বের করুন',
+                  'Enter manually or extract from FIR/complaint text',
+                ),
+              ),
+              const SizedBox(height: 14),
+              _caseCreateOption(
+                icon: Icons.edit_note_rounded,
+                title: 'Manual Case Entry',
+                subtitle: L10n.t(
+                  'ধাপে ধাপে নিজে তথ্য লিখুন',
+                  'Enter the case details step by step',
+                ),
+                onTap: () => Navigator.pop(sheetContext, 'manual'),
+              ),
+              const SizedBox(height: 10),
+              _caseCreateOption(
+                icon: Icons.document_scanner_rounded,
+                title: 'Case Parser / FIR থেকে',
+                subtitle: L10n.t(
+                  'FIR/complaint text paste করে auto-extract করুন',
+                  'Paste FIR/complaint text and auto-extract fields',
+                ),
+                onTap: () => Navigator.pop(sheetContext, 'parser'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || method == null) return;
+    if (method == 'manual') {
+      await _openManualCase();
+    } else if (method == 'parser') {
+      await _openCaseParser();
+    }
+  }
+
+  Widget _caseCreateOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: InvestigoUi.cardDecoration(),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF4FF),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Icon(icon, color: InvestigoUi.primary, size: 26),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: onTap,
+      ),
+    );
   }
 
   void _needCaseMessage() {
@@ -606,6 +687,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: _newCase,
       ),
       InvestigoActionCard(
+        icon: Icons.document_scanner_outlined,
+        title: L10n.t('কেস পার্সার', 'Case Parser'),
+        subtitle: L10n.t(
+          'FIR text থেকে Case তৈরি',
+          'Create case from FIR text',
+        ),
+        onTap: _openCaseParser,
+        iconColor: const Color(0xFF0E8A72),
+      ),
+      InvestigoActionCard(
         icon: Icons.menu_book_outlined,
         title: L10n.t('সিডি তৈরি', 'Create CD'),
         subtitle: L10n.t('ধাপে ধাপে Case Diary', 'Guided Case Diary'),
@@ -675,7 +766,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _SimpleTool(Icons.checklist_outlined, L10n.t('চেকলিস্ট', 'Checklist'), _openInvestigationChecklist),
       _SimpleTool(Icons.policy_outlined, 'SOP', _openSopCompliance),
       _SimpleTool(Icons.summarize_outlined, L10n.t('রিপোর্ট', 'Reports'), _openReport),
-      _SimpleTool(Icons.document_scanner_outlined, L10n.t('কেস পার্সার', 'Case Parser'), _openCaseParser),
       _SimpleTool(Icons.assignment_outlined, 'UD', _openUdCase),
       _SimpleTool(Icons.table_chart_outlined, 'NCR', _openNcr),
       _SimpleTool(Icons.event_available_outlined, L10n.t('কমপ্লায়েন্স', 'Compliance'), _openCompliance),

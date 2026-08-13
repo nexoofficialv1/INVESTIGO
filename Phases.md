@@ -190,3 +190,7 @@ installer signing and PostgreSQL synchronization.
 - Preserved full Inquest field fillability under a collapsed simple-officer section
 - Corrected Means of Dispatch mapping without altering the printed 5371 column
 
+## v209.1
+- Branded Flutter/native Android splash.
+- Prominent offline Case Parser entry.
+- 14-day local trial and renewable yearly signed offline license.

@@ -94,3 +94,5 @@ Draft/report prompts must use only supplied facts. Never auto-write “no foul p
 ## v208.1
 Do not rewrite official UD form layouts. Data assistance may populate existing fields only. Any conclusion about foul play must come from the explicit officer selection; PM cause of death must come from the entered PM Report.
 
+## v209.1
+No drafting prompt semantics changed. Case Parser continues to extract only officer-supplied/pasted text and requires review before save.

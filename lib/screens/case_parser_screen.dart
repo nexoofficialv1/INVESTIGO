@@ -97,30 +97,102 @@ class _CaseParserScreenState extends State<CaseParserScreen> {
         rawText: rawText.text,
       );
 
+  String? _coreValidationError(CaseFile file) {
+    if (file.psCaseNo.trim().isEmpty) return 'PS Case No. missing';
+    if (file.caseDate.trim().isEmpty) return 'Case Date missing';
+    if (file.sections.trim().isEmpty) return 'Sections of Law missing';
+    if (file.placeOfOccurrence.trim().isEmpty) {
+      return 'Place of Occurrence missing';
+    }
+    if (file.dateTimeReporting.trim().isEmpty) {
+      return 'Date & Time of Reporting missing';
+    }
+    if (file.firGist.trim().isEmpty) return 'Brief Gist of FIR missing';
+    return null;
+  }
+
+  String _normalCaseNo(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+
   Future<void> _saveNewCase() async {
     if (!_parsed) _parse();
     final file = _currentParsed().toCaseFile(widget.profile);
-    if (file.psCaseNo.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PS Case No. missing. Fill it before saving.')));
+    final error = _coreValidationError(file);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
       return;
     }
+
+    final all = await _store.loadCases();
+    final normalized = _normalCaseNo(file.psCaseNo);
+    final duplicate = all.any(
+      (item) => _normalCaseNo(item.psCaseNo) == normalized,
+    );
+    if (duplicate) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'এই PS Case No. আগে থেকেই আছে। Existing case select করে Update করুন।',
+          ),
+        ),
+      );
+      return;
+    }
+
     await _store.saveCase(file);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Parsed data saved as new case')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Parsed data saved as new case')),
+    );
     Navigator.pop(context);
   }
 
   Future<void> _updateSelectedCase() async {
     final selected = _selectedCase;
     if (selected == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Update করার জন্য আগে existing case select করুন।')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Update করার জন্য আগে existing case select করুন।'),
+        ),
+      );
       return;
     }
     if (!_parsed) _parse();
-    final file = _currentParsed().toCaseFile(widget.profile, existing: selected);
+    final file = _currentParsed().toCaseFile(
+      widget.profile,
+      existing: selected,
+    );
+    final error = _coreValidationError(file);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      return;
+    }
+
+    final all = await _store.loadCases();
+    final normalized = _normalCaseNo(file.psCaseNo);
+    final duplicate = all.any(
+      (item) =>
+          item.id != selected.id &&
+          _normalCaseNo(item.psCaseNo) == normalized,
+    );
+    if (duplicate) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('এই PS Case No. অন্য case-এ আছে।')),
+      );
+      return;
+    }
+
     await _store.saveCase(file);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selected case updated from parsed data')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Selected case updated from parsed data')),
+    );
     Navigator.pop(context);
   }
 
@@ -129,7 +201,7 @@ class _CaseParserScreenState extends State<CaseParserScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Scan Document / Camera OCR'),
-        content: const Text('এই version-এ Text Parser ready. Camera দিয়ে complaint/FIR/report scan করে OCR extraction next online/OCR patch-এ add হবে। এখন document text copy/paste করে Parse করুন।'),
+        content: const Text('এই version-এ offline Text Parser ready। Camera OCR এখনো চালু নয়। পরের offline on-device OCR patch-এ scan extraction add হবে। এখন document text copy/paste করে Parse করুন।'),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
       ),
     );

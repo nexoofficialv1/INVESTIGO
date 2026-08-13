@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_theme.dart';
 import '../models/backend_config.dart';
 import '../services/local_store_service.dart';
+import '../services/offline_license_service.dart';
 import 'backend_settings_screen.dart';
 import '../models/officer_profile.dart';
 
@@ -23,6 +24,7 @@ class BackupScreen extends StatefulWidget {
 
 class _BackupScreenState extends State<BackupScreen> {
   final LocalStoreService _store = LocalStoreService();
+  final OfflineLicenseService _licenseService = OfflineLicenseService();
   final TextEditingController _restoreController = TextEditingController();
   BackendConfig _config = BackendConfig.empty();
   String _status = 'Ready';
@@ -41,23 +43,97 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => _config = config);
   }
 
+  bool _isLicensePreferenceKey(String key) {
+    return key.startsWith('offline_license_') ||
+        key == 'license_plan_v1' ||
+        key == 'license_status_v1' ||
+        key == 'license_fee_v1' ||
+        key == 'license_upi_v1' ||
+        key == 'license_txn_v1' ||
+        key == 'license_code_v1';
+  }
+
+  Future<OfflineLicenseSnapshot> _requireActiveLicense() async {
+    final snapshot = await _licenseService.evaluate();
+    if (!snapshot.canUseApp) {
+      throw StateError(
+        'Trial expired. Activate a license before backup/restore.',
+      );
+    }
+    return snapshot;
+  }
+
   Future<Map<String, dynamic>> _collectBackup() async {
+    final license = await _requireActiveLicense();
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys().toList()..sort();
     final data = <String, dynamic>{};
     for (final key in keys) {
+      if (_isLicensePreferenceKey(key)) continue;
       final value = prefs.get(key);
-      if (value is String || value is bool || value is int || value is double || value is List<String>) {
+      if (value is String ||
+          value is bool ||
+          value is int ||
+          value is double ||
+          value is List<String>) {
         data[key] = value;
       }
     }
     return {
-      'app': 'Investigation & Process',
-      'backupVersion': 1,
+      'app': 'INVESTIGO',
+      'backupVersion': 2,
       'createdAt': DateTime.now().toIso8601String(),
       'officer': widget.profile.toJson(),
+      'binding': {
+        'mode': license.isLicensed ? 'licensed' : 'trial',
+        'deviceCode': license.deviceCode,
+        'licenseId': license.licenseId ?? '',
+      },
       'data': data,
     };
+  }
+
+  String? _restoreBindingError(
+    Map<String, dynamic> decoded,
+    OfflineLicenseSnapshot current,
+  ) {
+    final version = decoded['backupVersion'];
+    final bindingRaw = decoded['binding'];
+
+    // Legacy v1 backups are never restorable into a fresh trial. A licensed
+    // installation may still import them for migration.
+    if (version != 2 || bindingRaw is! Map) {
+      return current.isLicensed
+          ? null
+          : 'Legacy backup restore requires an active yearly license.';
+    }
+
+    final binding = Map<String, dynamic>.from(bindingRaw);
+    final mode = binding['mode']?.toString() ?? '';
+    final backupDeviceCode = binding['deviceCode']?.toString() ?? '';
+    final backupLicenseId = binding['licenseId']?.toString() ?? '';
+
+    if (mode == 'trial') {
+      if (current.state != OfflineLicenseState.trial) {
+        return 'Trial backup can only be restored during the same active trial.';
+      }
+      if (backupDeviceCode != current.deviceCode) {
+        return 'Trial backup belongs to another installation and cannot be restored here.';
+      }
+      return null;
+    }
+
+    if (mode == 'licensed') {
+      if (!current.isLicensed) {
+        return 'Licensed backup restore requires an active yearly license.';
+      }
+      if (backupLicenseId.isEmpty || backupLicenseId != current.licenseId) {
+        return 'This licensed backup belongs to a different license.';
+      }
+      return null;
+    }
+
+    return 'Backup license binding is invalid.';
   }
 
   Future<void> _createBackup({bool share = false}) async {
@@ -88,41 +164,84 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _restoreFromText() async {
-    final text = _restoreController.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paste backup JSON first')));
+    final textValue = _restoreController.text.trim();
+    if (textValue.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paste backup JSON first')),
+      );
       return;
     }
+
+    Map<String, dynamic> decoded;
+    OfflineLicenseSnapshot current;
+    try {
+      current = await _requireActiveLicense();
+      decoded = Map<String, dynamic>.from(
+        jsonDecode(textValue) as Map,
+      );
+      final bindingError = _restoreBindingError(decoded, current);
+      if (bindingError != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(bindingError)),
+        );
+        return;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Restore blocked: $e')),
+      );
+      return;
+    }
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Restore backup?'),
-        content: const Text('এতে app-এর local saved data overwrite হতে পারে। আগে current backup নিয়ে নিন।'),
+        content: const Text(
+          'এতে app-এর local saved data overwrite হতে পারে। '
+          'License/trial state কখনও backup থেকে restore হবে না।',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Restore')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Restore'),
+          ),
         ],
       ),
     );
     if (ok != true) return;
+
     setState(() {
       _busy = true;
       _status = 'Restoring backup...';
     });
     try {
-      final decoded = jsonDecode(text) as Map<String, dynamic>;
       final data = Map<String, dynamic>.from(decoded['data'] as Map);
       final prefs = await SharedPreferences.getInstance();
       for (final entry in data.entries) {
+        if (_isLicensePreferenceKey(entry.key)) continue;
         final value = entry.value;
         if (value is String) await prefs.setString(entry.key, value);
         if (value is bool) await prefs.setBool(entry.key, value);
         if (value is int) await prefs.setInt(entry.key, value);
         if (value is double) await prefs.setDouble(entry.key, value);
-        if (value is List) await prefs.setStringList(entry.key, value.map((e) => e.toString()).toList());
+        if (value is List) {
+          await prefs.setStringList(
+            entry.key,
+            value.map((e) => e.toString()).toList(),
+          );
+        }
       }
       if (!mounted) return;
-      setState(() => _status = 'Restore complete. Restart app for best result.');
+      setState(
+        () => _status = 'Restore complete. Restart app for best result.',
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _status = 'Restore failed: $e');
@@ -150,7 +269,7 @@ class _BackupScreenState extends State<BackupScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Text('Local Backup', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
                 const SizedBox(height: 8),
-                const Text('এই backup app-এর local case, CD, forms, evidence, sketch map, UD case, backend settings ইত্যাদি JSON file হিসেবে save/share করবে।'),
+                const Text('Active trial/license থাকলেই backup নেওয়া যাবে। Trial শেষ হলে backup/export বন্ধ থাকবে। Trial backup শুধু একই installation-এ restore হবে। License/trial security keys backup-এ রাখা হবে না।'),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: ElevatedButton.icon(onPressed: _busy ? null : () => _createBackup(), icon: const Icon(Icons.save_alt), label: const Text('Create'))),
@@ -183,7 +302,7 @@ class _BackupScreenState extends State<BackupScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Text('Restore from Backup JSON', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
                 const SizedBox(height: 8),
-                const Text('Backup file খুলে JSON text paste করলে restore করা যাবে।'),
+                const Text('Backup restore license policy অনুযায়ী যাচাই হবে। Reinstall-এর নতুন trial-এ আগের trial installation-এর backup restore হবে না।'),
                 const SizedBox(height: 10),
                 TextField(controller: _restoreController, minLines: 5, maxLines: 10, decoration: const InputDecoration(labelText: 'Paste backup JSON here')),
                 const SizedBox(height: 10),

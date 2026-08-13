@@ -115,3 +115,6 @@ Adds backward-compatible SharedPreferences record `ud_lifecycle_v208`, keyed by 
 ## v208.1
 `ud_lifecycle_v208` gains backward-compatible optional `spotVisitDate` and `spotVisitTime` fields. Old lifecycle records load them as empty strings and remain readable; officer must fill them before a new Final Form can be finalized.
 
+## v209.1 local license state
+SharedPreferences stores installation code, trial start, last-seen UTC and signed license token.
+No investigation/case schema is changed by v209.

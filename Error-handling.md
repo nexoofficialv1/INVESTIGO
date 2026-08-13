@@ -106,3 +106,9 @@ Dead Body Challan after the planned PM date is blocked. A challan more than one 
 ## v208.1
 Final Form blocks until separate spot-visit date/time are recorded. Spot visit cannot be later than the start of inquest. Challan/body dispatch cannot predate the inquest date or occur after the planned PM date.
 
+## v209.1
+- Invalid/mismatched/expired activation keys fail closed.
+- Clock rollback gets an explicit recovery message.
+- Case Parser now enforces the same core required fields and duplicate PS Case No. protection as Manual Case Entry.
+- Backup and restore operations independently re-check active trial/license state.
+- Legacy backup restore is denied in trial mode; an active yearly license is required for migration.

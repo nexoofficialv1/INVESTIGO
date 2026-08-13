@@ -65,6 +65,76 @@ jobs:
           manifest.write_text(text, encoding='utf-8')
           PY
 
+      - name: Configure INVESTIGO native splash
+        run: |
+          cat > android/app/src/main/res/drawable/investigo_splash_icon.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="96dp"
+              android:height="96dp"
+              android:viewportWidth="96"
+              android:viewportHeight="96">
+              <path
+                  android:fillColor="#2447D8"
+                  android:pathData="M48,6 L82,18 L82,43 C82,65 68,82 48,91 C28,82 14,65 14,43 L14,18 Z" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M31,25 L58,25 L70,37 L70,70 L31,70 Z M57,27 L57,39 L68,39 Z M38,47 L63,47 L63,52 L38,52 Z M38,58 L60,58 L60,63 L38,63 Z" />
+          </vector>
+          EOF
+
+          cat > android/app/src/main/res/drawable/launch_background.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="#F6F8FC" />
+              <item
+                  android:drawable="@drawable/investigo_splash_icon"
+                  android:gravity="center" />
+          </layer-list>
+          EOF
+
+          mkdir -p android/app/src/main/res/values-v31
+          cat > android/app/src/main/res/values-v31/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+                  <item name="android:windowSplashScreenBackground">#F6F8FC</item>
+                  <item name="android:windowSplashScreenAnimatedIcon">@drawable/investigo_splash_icon</item>
+                  <item name="android:windowSplashScreenIconBackgroundColor">#FFFFFF</item>
+                  <item name="android:postSplashScreenTheme">@style/NormalTheme</item>
+                  <item name="android:windowLightStatusBar">true</item>
+              </style>
+          </resources>
+          EOF
+
+      - name: Disable Android automatic data restore
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text(encoding='utf-8')
+
+          def set_attr(source, name, value):
+              pattern = rf'android:{name}="[^"]*"'
+              if re.search(pattern, source):
+                  return re.sub(
+                      pattern,
+                      f'android:{name}="{value}"',
+                      source,
+                      count=1,
+                  )
+              return source.replace(
+                  '<application',
+                  f'<application\\n        android:{name}="{value}"',
+                  1,
+              )
+
+          text = set_attr(text, 'allowBackup', 'false')
+          text = set_attr(text, 'fullBackupContent', 'false')
+          manifest.write_text(text, encoding='utf-8')
+          PY
+
       - name: Validate release source
         run: python3 tools/validate_release.py
 
