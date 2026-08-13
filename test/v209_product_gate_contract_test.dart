@@ -68,8 +68,14 @@ void main() {
 
     expect(workflow, contains('Configure INVESTIGO native splash'));
     expect(workflow, contains('Disable Android automatic data restore'));
-    expect(workflow, contains('android:allowBackup="false"'));
-    expect(workflow, contains('android:fullBackupContent="false"'));
+    expect(
+      workflow,
+      contains("text = set_attr(text, 'allowBackup', 'false')"),
+    );
+    expect(
+      workflow,
+      contains("text = set_attr(text, 'fullBackupContent', 'false')"),
+    );
 
     expect(backup, contains("'backupVersion': 2"));
     expect(backup, contains("key.startsWith('offline_license_')"));
