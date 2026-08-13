@@ -10,15 +10,22 @@ void main() {
     expect(source, isNot(contains('| Occupation | Age | Sex | Date & time')));
   });
 
-  test('smart narration entry points are visible for case and UD workflows', () {
+  test('smart narration entry point and staged UD lifecycle are visible', () {
     final caseSource =
         File('lib/screens/case_detail_screen.dart').readAsStringSync();
-    final udSource = File('lib/screens/ud_case_screen.dart').readAsStringSync();
-    expect(caseSource, contains('Smart Narration → CD'));
-    expect(
-      udSource,
-      contains('Auto-fill Inquest + Challan + Final Report'),
-    );
+    final udWorkflowSource =
+        File('lib/screens/ud_case_workflow_screen.dart').readAsStringSync();
+
+    // v207+ keeps Smart Narration as a real case action, but title/subtitle are
+    // split for the simpler card UI instead of one literal legacy label.
+    expect(caseSource, contains('Smart Narration'));
+    expect(caseSource, contains('Narration → CD'));
+
+    // v208+ deliberately replaced the old one-tap UD auto-fill flow with the
+    // safe staged lifecycle requested for actual police work.
+    expect(udWorkflowSource, contains('PM Report Received'));
+    expect(udWorkflowSource, contains('UD Final Form'));
+    expect(udWorkflowSource, contains('সুরতহাল / Inquest'));
   });
 
   test('CD and statement exports use bilingual translation service', () {
