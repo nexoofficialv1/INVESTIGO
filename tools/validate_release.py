@@ -53,6 +53,16 @@ for marker in ['cdColumnRatios', 'ncrColumnRatios', 'if5WitnessColumnRatios']:
     if marker not in spec_text:
         errors.append(f'missing-template-spec:{marker}')
 
+windows_workflow = (root / '.github/workflows/windows-desktop.yml').read_text(encoding='utf-8')
+android_workflow = (root / '.github/workflows/android-apk.yml').read_text(encoding='utf-8')
+
+if 'INVESTIGO-Windows-v195' in windows_workflow:
+    errors.append('stale-windows-artifact-version:v195')
+if 'INVESTIGO_VERSION' not in windows_workflow:
+    errors.append('missing-dynamic-windows-artifact-version')
+if 'INVESTIGO_VERSION' not in android_workflow:
+    errors.append('missing-dynamic-android-artifact-version')
+
 if errors:
     print('RELEASE VALIDATION FAILED')
     for item in errors:

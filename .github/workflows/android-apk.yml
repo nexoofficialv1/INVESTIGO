@@ -41,6 +41,17 @@ jobs:
           dart --version
           java -version
 
+      - name: Resolve application version
+        run: |
+          APP_VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
+          if [ -z "$APP_VERSION" ]; then
+            echo "Application version not found in pubspec.yaml" >&2
+            exit 1
+          fi
+          SAFE_VERSION="${APP_VERSION/+/-build}"
+          echo "INVESTIGO_VERSION=$SAFE_VERSION" >> "$GITHUB_ENV"
+          echo "Resolved INVESTIGO version: $SAFE_VERSION"
+
       - name: Generate Android platform files
         run: |
           flutter create . \
@@ -160,7 +171,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: INVESTIGO-debug-apk
+          name: INVESTIGO-debug-apk-${{ env.INVESTIGO_VERSION }}
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
@@ -168,7 +179,7 @@ jobs:
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: INVESTIGO-release-apk
+          name: INVESTIGO-release-apk-${{ env.INVESTIGO_VERSION }}
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
