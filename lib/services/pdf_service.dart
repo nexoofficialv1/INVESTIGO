@@ -194,7 +194,14 @@ class PdfService {
     var remaining = clean;
     while (remaining.length > maxChars) {
       var cut = remaining.lastIndexOf('\n', maxChars);
-      if (cut < maxChars ~/ 2) cut = remaining.lastIndexOf('. ', maxChars);
+      if (cut < maxChars ~/ 2) {
+        // Keep sentence-ending punctuation with the preceding chunk.
+        // Search only to maxChars - 1 so adding 1 never exceeds maxChars.
+        final sentenceCut = remaining.lastIndexOf('. ', maxChars - 1);
+        if (sentenceCut >= maxChars ~/ 2) {
+          cut = sentenceCut + 1;
+        }
+      }
       if (cut < maxChars ~/ 2) cut = remaining.lastIndexOf(' ', maxChars);
       if (cut < 1) cut = maxChars;
       result.add(remaining.substring(0, cut).trim());
