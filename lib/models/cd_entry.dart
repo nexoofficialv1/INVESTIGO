@@ -61,9 +61,12 @@ class CdEntry {
     required String body,
     String placeOfEntry = '',
     List<CdTableLine>? tableLines,
+    String? diaryDate,
   }) {
     final now = DateTime.now();
-    final date = now.toIso8601String().split('T').first;
+    final today = now.toIso8601String().split('T').first;
+    final date =
+        diaryDate != null && diaryDate.trim().isNotEmpty ? diaryDate.trim() : today;
     final hour = now.hour.toString().padLeft(2, '0');
     final minute = now.minute.toString().padLeft(2, '0');
     final time = '$hour.$minute hrs.';

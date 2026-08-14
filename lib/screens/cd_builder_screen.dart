@@ -58,6 +58,8 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
   final Set<String> _selectedPendingActionIds = <String>{};
 
   int? _cdNumber;
+  String _selectedCdDate =
+      DateTime.now().toIso8601String().split('T').first;
   bool _finalisationRequested = false;
   bool _loading = true;
   int _simpleStepIndex = 0;
@@ -314,7 +316,7 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
         south: _sketchSouth,
         east: _sketchEast,
         west: _sketchWest,
-        date: DateTime.now().toIso8601String().split('T').first,
+        date: _selectedCdDate,
       );
       await _store.saveSketchMap(map);
       await _sketchAuto.invalidate(widget.caseFile.id);
@@ -458,6 +460,7 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
       body: body,
       placeOfEntry: widget.profile.policeStation,
       tableLines: tableLines,
+      diaryDate: _selectedCdDate,
     ).copyWith(
       startTime: firstTime,
       endTime: lastTime,
@@ -671,6 +674,47 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
     return hour * 60 + minute;
   }
 
+  DateTime? _parseCdDate(String raw) {
+    final value = raw.trim().split(' ').first;
+    return DateTime.tryParse(value);
+  }
+
+  String _formatCdDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  Future<void> _pickCdDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final caseDate = _parseCdDate(widget.caseFile.caseDate);
+
+    DateTime? lastCdDate;
+    for (final cd in _previousCds) {
+      final parsed = _parseCdDate(cd.cdDate);
+      if (parsed != null &&
+          (lastCdDate == null || parsed.isAfter(lastCdDate))) {
+        lastCdDate = parsed;
+      }
+    }
+
+    var firstDate = lastCdDate ?? caseDate ?? DateTime(2000);
+    if (firstDate.isAfter(today)) firstDate = today;
+
+    var initialDate = _parseCdDate(_selectedCdDate) ?? today;
+    if (initialDate.isBefore(firstDate)) initialDate = firstDate;
+    if (initialDate.isAfter(today)) initialDate = today;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: today,
+      helpText: 'Case Diary Date / সিডির তারিখ',
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _selectedCdDate = _formatCdDate(picked));
+  }
+
   String _nowTime() {
     final now = DateTime.now();
     return '${now.hour.toString().padLeft(2, '0')}.${now.minute.toString().padLeft(2, '0')} hrs.';
@@ -766,6 +810,29 @@ class _CdBuilderScreenState extends State<CdBuilderScreen> {
                 : '${current.group} • ${widget.caseFile.displayTitle}',
             current: questions.isEmpty ? 1 : safeIndex + 1,
             total: questions.isEmpty ? 1 : questions.length,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: InvestigoUi.cardDecoration(),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: const Icon(
+                Icons.calendar_month_rounded,
+                color: InvestigoUi.primary,
+              ),
+              title: const Text(
+                'সিডির তারিখ / Case Diary Date',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+              subtitle: Text(
+                '$_selectedCdDate\n'
+                'আজ অ্যাপে লিখলেও যে দিনের তদন্তের কার্যক্রম লিপিবদ্ধ করছেন, '
+                'সেই তারিখ নির্বাচন করুন।',
+              ),
+              trailing: const Icon(Icons.edit_calendar_outlined),
+              onTap: _pickCdDate,
+            ),
           ),
           if (_cdNumber! > 1) ...[
             const SizedBox(height: 12),

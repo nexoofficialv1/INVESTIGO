@@ -67,6 +67,40 @@ class _CdEditorScreenState extends State<CdEditorScreen> {
 
   String _combinedBody(List<CdTableLine> lines) => lines.map((e) => e.proceedings).where((e) => e.trim().isNotEmpty).join('\n\n');
 
+  DateTime? _parseDate(String raw) =>
+      DateTime.tryParse(raw.trim().split(' ').first);
+
+  String _formatDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  Future<void> _pickCdDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final caseDate = _parseDate(widget.caseFile.caseDate);
+    final current = _parseDate(cdDate.text);
+
+    var firstDate = caseDate ?? DateTime(2000);
+    if (current != null && current.isBefore(firstDate)) {
+      firstDate = current;
+    }
+    if (firstDate.isAfter(today)) firstDate = DateTime(2000);
+
+    var initialDate = current ?? today;
+    if (initialDate.isBefore(firstDate)) initialDate = firstDate;
+    if (initialDate.isAfter(today)) initialDate = today;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: today,
+      helpText: 'Case Diary Date / সিডির তারিখ',
+    );
+    if (picked == null || !mounted) return;
+    setState(() => cdDate.text = _formatDate(picked));
+  }
+
   Future<void> _save({bool finalSave = false}) async {
     final lines = _currentLines();
     final updated = _cd.copyWith(
@@ -190,7 +224,18 @@ class _CdEditorScreenState extends State<CdEditorScreen> {
                 children: [
                   const Text('CD Header Details', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  FormHelpers.textField(controller: cdDate, label: 'CD Date'),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: TextField(
+                      controller: cdDate,
+                      readOnly: true,
+                      onTap: _pickCdDate,
+                      decoration: const InputDecoration(
+                        labelText: 'সিডির তারিখ / Case Diary Date',
+                        suffixIcon: Icon(Icons.calendar_month_outlined),
+                      ),
+                    ),
+                  ),
                   Row(
                     children: [
                       Expanded(child: FormHelpers.textField(controller: startTime, label: 'Start Time')),
