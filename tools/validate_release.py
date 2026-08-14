@@ -29,6 +29,7 @@ else:
 required_sources = [
     'lib/services/official_template_spec.dart',
     'lib/services/release_validation_service.dart',
+    'lib/services/backup_restore_service.dart',
     'lib/services/pdf_service.dart',
     'lib/services/doc_export_service.dart',
     'lib/screens/settings_screen.dart',
@@ -36,6 +37,18 @@ required_sources = [
 for name in required_sources:
     if not (root / name).exists():
         errors.append(f'missing-source:{name}')
+
+required_regression_tests = [
+    'test/multiple_case_persistence_test.dart',
+    'test/backup_restore_service_test.dart',
+    'test/app_language_persistence_test.dart',
+    'test/cd_pdf_multipage_regression_test.dart',
+    'test/doc_export_contract_test.dart',
+    'test/v209_product_gate_contract_test.dart',
+]
+for name in required_regression_tests:
+    if not (root / name).exists():
+        errors.append(f'missing-regression-test:{name}')
 
 pdf_text = (root / 'lib/services/pdf_service.dart').read_text(encoding='utf-8')
 for marker in ['5371', '5370', '5363', '5203', '“A” FORM']:
