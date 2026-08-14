@@ -129,7 +129,7 @@ class PdfService {
     // proceedings row comfortably below the available body height so a
     // continued row cannot be clipped/blank on later pages.
     const maxCharsPerRow = 1000;
-    const maxCharsPerPage = 1450;
+    const maxCharsPerPage = 2100;
     final normalized = <CdTableLine>[];
     for (final line in sourceLines) {
       final parts = _splitTextSafely(line.proceedings, maxCharsPerRow);
