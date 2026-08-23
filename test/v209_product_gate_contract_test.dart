@@ -64,6 +64,8 @@ void main() {
     expect(license, isNot(contains('code.length < 6')));
     expect(intro, contains('100% Offline • Secure Local Workflow'));
     final backup =
+        File('lib/services/backup_restore_service.dart').readAsStringSync();
+    final backupScreen =
         File('lib/screens/backup_screen.dart').readAsStringSync();
 
     expect(workflow, contains('Configure INVESTIGO native splash'));
@@ -82,7 +84,7 @@ void main() {
     expect(backup, contains("mode == 'trial'"));
     expect(backup, contains('backupDeviceCode != current.deviceCode'));
     expect(backup, contains('Trial backup belongs to another installation'));
-    expect(backup, contains('Trial expired. Activate a license before backup/restore.'));
+    expect(backupScreen, contains('Trial expired. Activate a license before backup/restore.'));
     expect(license, contains('Trial শেষ হলে activation ছাড়া app-এর কোনো data, backup, export বা restore access থাকবে না'));
   });
 }
