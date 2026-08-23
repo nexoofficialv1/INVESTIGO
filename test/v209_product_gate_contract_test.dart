@@ -79,7 +79,14 @@ void main() {
       contains("text = set_attr(text, 'fullBackupContent', 'false')"),
     );
 
-    expect(backup, contains("'backupVersion': 2"));
+    expect(
+      backup,
+      contains('static const int backupVersion = 2;'),
+    );
+    expect(
+      backup,
+      contains("'backupVersion': backupVersion"),
+    );
     expect(backup, contains("key.startsWith('offline_license_')"));
     expect(backup, contains("mode == 'trial'"));
     expect(backup, contains('backupDeviceCode != current.deviceCode'));
