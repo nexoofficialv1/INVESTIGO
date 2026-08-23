@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/offline_license_service.dart';
 import '../services/license_purchase_service.dart';
@@ -20,6 +21,9 @@ class LicenseScreen extends StatefulWidget {
 }
 
 class _LicenseScreenState extends State<LicenseScreen> {
+  static const String _licenseEmail = 'bappa.roysm@gmail.com';
+  static const String _licenseWhatsApp = '916295192839';
+
   final OfflineLicenseService _service = OfflineLicenseService();
   final LicensePurchaseService _purchaseService = LicensePurchaseService();
   final TextEditingController _activationController =
@@ -145,6 +149,39 @@ class _LicenseScreenState extends State<LicenseScreen> {
       _activationController.clear();
       await _load();
       await widget.onLicenseChanged?.call();
+    }
+  }
+
+  Future<void> _sendLicenseEmail(OfflineLicenseSnapshot value) async {
+    final subject = Uri.encodeComponent('INVESTIGO License Request');
+    final body = Uri.encodeComponent(
+      'Hello,\n\nI want to activate INVESTIGO.\n'
+      'Device Code: ${value.deviceCode}\n\n'
+      'Please provide the yearly activation key.',
+    );
+    final uri = Uri.parse(
+      'mailto:$_licenseEmail?subject=$subject&body=$body',
+    );
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open email app.')),
+      );
+    }
+  }
+
+  Future<void> _sendLicenseWhatsApp(OfflineLicenseSnapshot value) async {
+    final text = Uri.encodeComponent(
+      'Hello, I want to activate INVESTIGO.\n'
+      'Device Code: ${value.deviceCode}\n'
+      'Please provide the yearly activation key.',
+    );
+    final uri = Uri.parse('https://wa.me/$_licenseWhatsApp?text=$text');
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open WhatsApp.')),
+      );
     }
   }
 
@@ -384,6 +421,61 @@ class _LicenseScreenState extends State<LicenseScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        if (!value.canUseApp) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: InvestigoUi.cardDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Request Activation Key',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '14-day trial শেষ হয়েছে। নিচের Email বা WhatsApp-এ এই Device Code পাঠান। Payment/verification-এর পর yearly activation key দেওয়া হবে.',
+                  style: TextStyle(
+                    color: InvestigoUi.muted,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const SelectableText(
+                  'Email: bappa.roysm@gmail.com\nWhatsApp: 6295192839',
+                  style: TextStyle(
+                    color: InvestigoUi.primaryDark,
+                    fontWeight: FontWeight.w800,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: InvestigoUi.primaryButtonStyle(),
+                    onPressed: () => _sendLicenseWhatsApp(value),
+                    icon: const Icon(Icons.chat_rounded),
+                    label: const Text('Send Device Code on WhatsApp'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _sendLicenseEmail(value),
+                    icon: const Icon(Icons.email_rounded),
+                    label: const Text('Send Device Code by Email'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         _buildOnlinePurchaseCard(value),
         if (_purchaseService.isConfigured && _plan != null)
           const SizedBox(height: 16),
