@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/offline_license_service.dart';
+import '../services/license_purchase_service.dart';
 import '../widgets/investigo_ui.dart';
 
 class LicenseScreen extends StatefulWidget {
@@ -20,17 +21,23 @@ class LicenseScreen extends StatefulWidget {
 
 class _LicenseScreenState extends State<LicenseScreen> {
   final OfflineLicenseService _service = OfflineLicenseService();
+  final LicensePurchaseService _purchaseService = LicensePurchaseService();
   final TextEditingController _activationController =
       TextEditingController();
 
   OfflineLicenseSnapshot? _snapshot;
+  LicensePurchasePlan? _plan;
+  LicenseCheckout? _checkout;
   bool _loading = true;
   bool _activating = false;
+  bool _buying = false;
+  bool _checkingPayment = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadPlan();
   }
 
   @override
@@ -46,6 +53,83 @@ class _LicenseScreenState extends State<LicenseScreen> {
       _snapshot = snapshot;
       _loading = false;
     });
+  }
+
+  Future<void> _loadPlan() async {
+    if (!_purchaseService.isConfigured) return;
+    try {
+      final plan = await _purchaseService.fetchPlan();
+      if (!mounted) return;
+      setState(() => _plan = plan);
+    } catch (_) {}
+  }
+
+  Future<void> _buyLicense(OfflineLicenseSnapshot value) async {
+    if (_buying || _plan == null) return;
+    setState(() => _buying = true);
+    try {
+      final checkout = await _purchaseService.createCheckout(
+        deviceCode: value.deviceCode,
+        planId: _plan!.planId,
+      );
+      final opened = await _purchaseService.openCheckout(checkout);
+      if (!mounted) return;
+      setState(() => _checkout = checkout);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            opened
+                ? 'Payment page opened. After payment, return to INVESTIGO and tap “I Have Paid — Activate”.'
+                : 'Could not open the payment page.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment could not be started: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _buying = false);
+    }
+  }
+
+  Future<void> _verifyOnlinePayment(OfflineLicenseSnapshot value) async {
+    final checkout = _checkout;
+    if (_checkingPayment || checkout == null) return;
+    setState(() => _checkingPayment = true);
+    try {
+      final payment = await _purchaseService.checkPayment(
+        orderId: checkout.orderId,
+        deviceCode: value.deviceCode,
+      );
+      if (!payment.paid || payment.activationToken == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(payment.message)),
+        );
+        return;
+      }
+
+      final activation = await _service.activate(payment.activationToken!);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(activation.message)),
+      );
+
+      if (activation.success) {
+        setState(() => _checkout = null);
+        await _load();
+        await widget.onLicenseChanged?.call();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment verification failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _checkingPayment = false);
+    }
   }
 
   Future<void> _activate() async {
@@ -114,6 +198,82 @@ class _LicenseScreenState extends State<LicenseScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _buildContent(_snapshot!),
+    );
+  }
+
+  Widget _buildOnlinePurchaseCard(OfflineLicenseSnapshot value) {
+    final plan = _plan;
+    if (!_purchaseService.isConfigured || plan == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: InvestigoUi.cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.workspace_premium_rounded, color: InvestigoUi.primary),
+              SizedBox(width: 8),
+              Text(
+                'Buy Yearly License',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${plan.label} • ${plan.displayPrice}',
+            style: const TextStyle(
+              color: InvestigoUi.primaryDark,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Pay securely using available UPI, card or net-banking options. After successful payment, the yearly license is issued for this installation.',
+            style: TextStyle(color: InvestigoUi.muted, height: 1.35),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: InvestigoUi.primaryButtonStyle(),
+              onPressed: _buying ? null : () => _buyLicense(value),
+              icon: _buying
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.payments_rounded),
+              label: Text(_buying ? 'Opening Payment...' : 'Buy License'),
+            ),
+          ),
+          if (_checkout != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _checkingPayment ? null : () => _verifyOnlinePayment(value),
+                icon: _checkingPayment
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.verified_rounded),
+                label: Text(
+                  _checkingPayment ? 'Checking Payment...' : 'I Have Paid — Activate',
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -224,6 +384,9 @@ class _LicenseScreenState extends State<LicenseScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        _buildOnlinePurchaseCard(value),
+        if (_purchaseService.isConfigured && _plan != null)
+          const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: InvestigoUi.cardDecoration(),
@@ -239,7 +402,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Signed yearly activation key paste করুন। Internet connection লাগবে না।',
+                'Online payment না হলে signed yearly activation key paste করুন। Manual activation-এর জন্য Internet connection লাগবে না।',
                 style: TextStyle(
                   color: InvestigoUi.muted,
                   height: 1.35,
