@@ -23,7 +23,7 @@ if not version_match:
     errors.append('missing-version')
 else:
     version = version_match.group(1)
-    if not re.fullmatch(r'1\.(?:8|9)\.0-rc\.\d+\+\d+', version):
+    if not re.fullmatch(r'1\.(?:8|9)\.0(?:-rc\.\d+)?\+\d+', version):
         errors.append(f'unexpected-version:{version}')
 
 required_sources = [
