@@ -83,6 +83,48 @@ jobs:
           manifest.write_text(s)
           PY
 
+      - name: Install icon tooling
+        run: pip install pillow
+
+      - name: Install INVESTIGO store launcher icon
+        shell: bash
+        run: |
+          python3 - <<'PYICON'
+          from pathlib import Path
+          from PIL import Image
+
+          src = Path("assets/branding/investigo_store_icon.png")
+          if not src.exists():
+              raise SystemExit("Store icon asset missing")
+
+          sizes = {
+              "mdpi": 48,
+              "hdpi": 72,
+              "xhdpi": 96,
+              "xxhdpi": 144,
+              "xxxhdpi": 192,
+          }
+
+          image = Image.open(src).convert("RGBA")
+
+          for density, size in sizes.items():
+              outdir = Path(f"android/app/src/main/res/mipmap-{density}")
+              outdir.mkdir(parents=True, exist_ok=True)
+              image.resize((size, size), Image.LANCZOS).save(
+                  outdir / "ic_launcher.png"
+              )
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          text = text.replace(
+              'android:icon="@mipmap/ic_launcher"',
+              'android:icon="@mipmap/ic_launcher"',
+          )
+          manifest.write_text(text)
+
+          print("Launcher icon installed")
+          PYICON
+
       - name: Restore production keystore
         shell: bash
         env:

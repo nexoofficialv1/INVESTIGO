@@ -23,6 +23,7 @@ class LicenseScreen extends StatefulWidget {
 class _LicenseScreenState extends State<LicenseScreen> {
   static const String _licenseEmail = 'bappa.roysm@gmail.com';
   static const String _licenseWhatsApp = '916295192839';
+  static const String _privacyUrl = 'https://nexoofficialv1.github.io/ASTRA-PRIVACY/investigo.html';
 
   final OfflineLicenseService _service = OfflineLicenseService();
   final LicensePurchaseService _purchaseService = LicensePurchaseService();
@@ -181,6 +182,22 @@ class _LicenseScreenState extends State<LicenseScreen> {
     if (!opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open WhatsApp.')),
+      );
+    }
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.parse(_privacyUrl);
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open Privacy Policy.'),
+        ),
       );
     }
   }
