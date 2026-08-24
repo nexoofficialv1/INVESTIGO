@@ -158,7 +158,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
     final body = Uri.encodeComponent(
       'Hello,\n\nI want to activate INVESTIGO.\n'
       'Device Code: ${value.deviceCode}\n\n'
-      'Please provide the yearly activation key.',
+      'Plan required: Monthly ₹999 / Yearly ₹9,999 / Launch Yearly ₹8,999.10.\nPlease provide the activation key.',
     );
     final uri = Uri.parse(
       'mailto:$_licenseEmail?subject=$subject&body=$body',
@@ -175,7 +175,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
     final text = Uri.encodeComponent(
       'Hello, I want to activate INVESTIGO.\n'
       'Device Code: ${value.deviceCode}\n'
-      'Please provide the yearly activation key.',
+      'Plan required: Monthly ₹999 / Yearly ₹9,999 / Launch Yearly ₹8,999.10.\nPlease provide the activation key.',
     );
     final uri = Uri.parse('https://wa.me/$_licenseWhatsApp?text=$text');
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -215,7 +215,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
       case OfflineLicenseState.trial:
         return '14-Day Trial';
       case OfflineLicenseState.licensed:
-        return 'Yearly License Active';
+        return 'License Active';
       case OfflineLicenseState.expired:
         return 'Activation Required';
       case OfflineLicenseState.clockError:
@@ -454,7 +454,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  '14-day trial শেষ হয়েছে। নিচের Email বা WhatsApp-এ এই Device Code পাঠান। Payment/verification-এর পর yearly activation key দেওয়া হবে.',
+                  '14-day trial শেষ হয়েছে। নিচের Email বা WhatsApp-এ এই Device Code পাঠান। আপনার পছন্দের Monthly বা Yearly plan জানান। Payment/verification-এর পর signed activation key দেওয়া হবে.',
                   style: TextStyle(
                     color: InvestigoUi.muted,
                     height: 1.4,
@@ -499,11 +499,116 @@ class _LicenseScreenState extends State<LicenseScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: InvestigoUi.cardDecoration(),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.workspace_premium_rounded,
+                    color: InvestigoUi.primary,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'INVESTIGO Plans',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 14),
+              Text(
+                '14-Day Free Trial',
+                style: TextStyle(
+                  color: InvestigoUi.primaryDark,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Install করার পর প্রথম 14 দিন সম্পূর্ণ ব্যবহার করা যাবে।',
+                style: TextStyle(
+                  color: InvestigoUi.muted,
+                  height: 1.35,
+                ),
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 10),
+              Text(
+                'Monthly License — ₹999',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                'Activation-এর তারিখ থেকে 1 month.',
+                style: TextStyle(
+                  color: InvestigoUi.muted,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Yearly License — ₹9,999',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                'Activation-এর তারিখ থেকে 1 year.',
+                style: TextStyle(
+                  color: InvestigoUi.muted,
+                ),
+              ),
+              SizedBox(height: 12),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Color(0xFFEFF8F1),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(12),
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.local_offer_rounded,
+                        color: Color(0xFF15803D),
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'LAUNCH OFFER • Yearly 10% OFF • ₹8,999.10',
+                          style: TextStyle(
+                            color: Color(0xFF166534),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: InvestigoUi.cardDecoration(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Activate / Renew',
+                'Activate / Renew License',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -511,7 +616,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Online payment না হলে signed yearly activation key paste করুন। Manual activation-এর জন্য Internet connection লাগবে না।',
+                'Monthly বা Yearly signed activation key এখানে paste করুন। Manual activation-এর জন্য Internet connection লাগবে না।',
                 style: TextStyle(
                   color: InvestigoUi.muted,
                   height: 1.35,

@@ -189,15 +189,15 @@ jobs:
 
           cp \
             build/app/outputs/bundle/release/app-release.aab \
-            indus/INVESTIGO_v1.9.0_INDUS.aab
+            indus/INVESTIGO_v1.9.1_INDUS.aab
 
           cp \
             build/app/outputs/flutter-apk/app-release.apk \
-            indus/INVESTIGO_v1.9.0_INDUS.apk
+            indus/INVESTIGO_v1.9.1_INDUS.apk
 
           sha256sum \
-            indus/INVESTIGO_v1.9.0_INDUS.aab \
-            indus/INVESTIGO_v1.9.0_INDUS.apk \
+            indus/INVESTIGO_v1.9.1_INDUS.aab \
+            indus/INVESTIGO_v1.9.1_INDUS.apk \
             > indus/SHA256SUMS.txt
 
       - name: Publish GitHub Release
@@ -205,7 +205,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v1.9.0-indus-production"
+          TAG="v1.9.1-indus-production"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload \
@@ -213,6 +213,6 @@ jobs:
           else
             gh release create \
               "$TAG" indus/* \
-              --title "INVESTIGO v1.9.0 - Indus Production" \
+              --title "INVESTIGO v1.9.1 - Indus Production" \
               --notes "14-day trial with signed yearly license activation. Production release for Indus Appstore."
           fi
